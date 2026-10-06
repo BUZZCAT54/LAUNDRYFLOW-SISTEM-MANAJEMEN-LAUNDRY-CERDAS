@@ -1,8 +1,9 @@
-export function createConnectionController({request,onState,onData,isOnline=()=>navigator.onLine,retryDelays=[2000,5000,10000,20000,30000],heartbeatMs=30000}) {
- let stopped=false,pending=null,retryTimer,heartbeatTimer,attempt=0,userId=null;
+export function createConnectionController({request,onState,onData,isOnline=()=>navigator.onLine,retryDelays=[2000,5000,10000,20000,30000],heartbeatMs=30000,minimumLoadingMs=1500,completionHoldMs=300}) {
+ let stopped=false,pending=null,retryTimer,heartbeatTimer,loadingTimer,finishLoadingWait,attempt=0,userId=null;
  let state={phase:'loading',step:0,progress:20,busy:true,message:''};
  const publish=patch=>{state={...state,...patch};if(!stopped)onState(state);};
  const clearTimers=()=>{clearTimeout(retryTimer);clearTimeout(heartbeatTimer);};
+ const waitForLoading=ms=>new Promise(resolve=>{finishLoadingWait=resolve;loadingTimer=setTimeout(()=>{finishLoadingWait=null;resolve();},Math.max(0,ms));});
  function scheduleRetry(){
   clearTimeout(retryTimer);
   if(!stopped&&state.phase==='reconnecting')retryTimer=setTimeout(()=>run(false),retryDelays[Math.min(Math.max(0,attempt-1),retryDelays.length-1)]);
@@ -32,6 +33,7 @@ export function createConnectionController({request,onState,onData,isOnline=()=>
   if(pending)return pending;
   clearTimers();
   if(!isOnline()){disconnect();return Promise.resolve();}
+  const started=Date.now();
   publish({phase:initial?'loading':'reconnecting',step:1,progress:20,busy:true,message:''});
   pending=(async()=>{
    try {
@@ -39,6 +41,13 @@ export function createConnectionController({request,onState,onData,isOnline=()=>
     if(stopped)return;
     publish({step:2,progress:65});
     const data=session.user?await request('/bootstrap'):null;
+    if(initial&&!stopped&&state.phase==='loading'){
+     await waitForLoading(minimumLoadingMs-completionHoldMs-(Date.now()-started));
+     if(stopped||state.phase!=='loading')return;
+     publish({progress:100});
+     await waitForLoading(completionHoldMs);
+     if(stopped||state.phase!=='loading')return;
+    }
     if(stopped)return;
     if(!isOnline()){disconnect();return;}
     onData(session,data);
@@ -57,5 +66,5 @@ export function createConnectionController({request,onState,onData,isOnline=()=>
   })();
   return pending;
  }
- return {reload:()=>run(true),retry:()=>run(false),disconnect,stop:()=>{stopped=true;clearTimers();}};
+ return {reload:()=>run(true),retry:()=>run(false),disconnect,stop:()=>{stopped=true;clearTimers();clearTimeout(loadingTimer);finishLoadingWait?.();finishLoadingWait=null;}};
 }

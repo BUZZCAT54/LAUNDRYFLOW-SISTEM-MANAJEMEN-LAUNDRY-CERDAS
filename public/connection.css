@@ -3,12 +3,12 @@
 .connection-screen *{box-sizing:border-box}
 .connection-frame{position:relative;isolation:isolate;overflow:hidden;width:100%;max-width:1600px;min-height: min(84vh,900px);background:#fff;border-radius:20px;box-shadow:0 18px 55px #3321b329;display:flex;justify-content:center;padding:55px 0}
 .connection-art{position:absolute;z-index:-1;inset:0;pointer-events:none;background-image:url('/assets/reconnection-reference.png');background-size:107.5% 117.3%;background-position:50% 50.8%;background-repeat:no-repeat}
-.connection-art-left{clip-path:inset(0 67.4% 0 0)}
+.connection-art-left{clip-path:inset(0 68.5% 0 0)}
 .connection-art-right{clip-path:inset(0 0 0 71%)}
 .is-loading .connection-art{background-image:url('/assets/loading-reference.png');background-size:107.56% 119.07%;background-position:50% 51.8%}
 .is-loading .connection-art-left{clip-path:inset(0 66.8% 0 0)}
-.is-loading .connection-art-right{clip-path:inset(0 0 0 64.5%)}
-.connection-window-dots{position:absolute;left:24px;top:24px;display:flex;gap:11px}
+.is-loading .connection-art-right{clip-path:polygon(64.5% 0,100% 0,100% 100%,64.5% 100%,64.5% 79%,68% 79%,68% 71%,64.5% 71%)}
+.connection-window-dots{position:absolute;left:14px;top:14px;display:flex;gap:11px;padding:10px;background:white;border-radius:8px}
 .connection-window-dots i{width:14px;height:14px;border-radius:50%;background:#ff5746}
 .connection-window-dots i:nth-child(2){background:#ffbf0f}
 .connection-window-dots i:nth-child(3){background:#0ac831}
@@ -64,3 +64,5 @@
 @media(max-width:1100px){.connection-center{width:44%}.connection-art-left{clip-path:inset(0 74% 0 0)}.connection-art-right{clip-path:inset(0 0 0 77%)}.connection-logo{width:110px;height:110px}.connection-brand strong{font-size:30px}.connection-brand span{font-size:11px}.connection-wifi{width:155px;height:125px;margin-top:30px}.connection-wifi>svg{width:155px;height:125px}.connection-wifi>span{height:63px;width:63px;font-size:44px}.connection-actions{gap:8px}.connection-actions button{font-size:12px}.is-loading .connection-center{width:44%}.is-loading .connection-art-right{clip-path:inset(0 0 0 73%)}.is-loading .connection-art-left{clip-path:inset(0 74% 0 0)}}
 @media(max-width:700px){.connection-screen{padding:16px 12px;display:flex;align-items:flex-start}.connection-frame{min-height:calc(100dvh - 32px);padding:62px 22px 38px;border-radius:17px}.connection-center,.is-loading .connection-center{width:100%;max-width:460px;padding:0}.connection-art{opacity:.13;background-size:auto 117.3%;background-position:center}.connection-art-left,.is-loading .connection-art-left{clip-path:inset(0 86% 0 0)}.connection-art-right,.is-loading .connection-art-right{clip-path:inset(0 0 0 86%)}.connection-window-dots{top:20px;left:20px;gap:8px}.connection-window-dots i{height:10px;width:10px}.connection-logo{height:98px;width:98px}.connection-brand{gap:7px}.connection-brand strong{font-size:27px}.connection-brand span{font-size:10px;padding:5px 7px;margin-top:9px}.connection-screen h1{font-size:27px}.connection-wifi{margin-top:28px;margin-bottom:16px}.connection-description{font-size:14px}.connection-help{padding:13px 12px;gap:10px}.connection-help b{font-size:13px}.connection-help p{font-size:12px}.connection-help>svg{width:42px;height:42px}.connection-steps small{font-size:11px;max-width:90px}.connection-actions{flex-direction:column;gap:10px}.connection-actions button{min-height:48px;font-size:13px}.is-loading .connection-frame{min-height:calc(100dvh - 32px)}.is-loading .connection-logo{width:180px;height:180px}.is-loading .connection-brand strong{font-size:43px}.is-loading .connection-brand span{font-size:14px}.connection-loading-content{margin-top:35px}.connection-loading-content h1{font-size:26px;white-space:normal}.connection-loading-content p{font-size:12px}.connection-progress{height:14px}.connection-progress-row>b{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.connection-screen *{animation:none!important;transition:none!important}}
+.connection-loading-content h1{font-family:Caveat,'Segoe Print',cursive;font-size:clamp(28px,3vw,46px);font-style:normal}
+@media(max-width:700px){.connection-art-left,.is-loading .connection-art-left{background-position:4% center}.connection-art-right,.is-loading .connection-art-right{background-position:96% center}}

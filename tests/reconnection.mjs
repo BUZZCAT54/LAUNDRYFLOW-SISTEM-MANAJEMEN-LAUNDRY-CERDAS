@@ -15,7 +15,7 @@ try {
  fail=true;controller.disconnect();await tick();
  assert.equal(states.at(-1).phase,'reconnecting');
  assert.equal(commits.length,1,'Failed reconnect must preserve previously loaded data');
- fail=false;await controller.retry();
+ fail=false;assert.equal(await controller.retry(),true,'Dashboard navigation is allowed only after recovery succeeds');
  assert.equal(states.at(-1).phase,'ready');
  assert.equal(commits.length,2);
  offline=true;controller.disconnect();const before=calls.length;await controller.retry();
@@ -28,5 +28,18 @@ try {
  const pending=createConnectionController({request:()=>{readCount++;return new Promise(resolve=>{release=resolve;});},isOnline:()=>true,onState:()=>{},onData:()=>{lateCommit=true;}});
  const first=pending.reload();pending.retry();assert.equal(readCount,1,'Concurrent retry must share one request');
  pending.stop();release({user:null});await first;assert.equal(lateCommit,false,'Unmount must ignore late responses');
- console.log('PASS: automatic recovery, data preservation, offline, deduplication, cleanup, read-only retries');
+ const timingStates=[];
+ let committed=false;
+ const timed=createConnectionController({request:async()=>({user:null}),isOnline:()=>true,onState:s=>timingStates.push({...s}),onData:()=>{committed=true;},minimumLoadingMs:80,completionHoldMs:20});
+ try {
+  const started=performance.now();
+  const loading=timed.reload();
+  await tick();
+  assert.equal(committed,false,'Fast responses must keep the loading screen visible');
+  await loading;
+  assert.ok(performance.now()-started>=75,'Loading must respect its minimum duration');
+  assert.ok(timingStates.some(s=>s.phase==='loading'&&s.progress===100),'Show completed progress before entering the app');
+  assert.equal(committed,true);
+ }finally{timed.stop();}
+ console.log('PASS: automatic recovery, data preservation, offline, deduplication, cleanup, read-only retries, loading duration');
 } finally {controller.stop();}

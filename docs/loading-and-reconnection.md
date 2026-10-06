@@ -9,7 +9,7 @@ Panduan visual: ENERGY 3 / RHYTHM 2 / MOTION 1. Warna dan ilustrasi mengikuti re
 ## Perilaku
 
 - HTML awal langsung menampilkan splash sebelum JavaScript selesai dimuat.
-- Progress menunjukkan tahap persiapan (20% pemeriksaan sesi, 65% pemuatan data), bukan persentase byte unduhan. Tidak ada jeda buatan.
+- Progress menunjukkan tahap persiapan (20% pemeriksaan sesi, 65% pemuatan data), bukan persentase byte unduhan. Sesuai permintaan pengguna, loading tampil minimal 1,5 detik termasuk 300 ms pada 100% sebelum halaman dibuka. Jika data lebih lambat, loading menunggu data selesai; sambung ulang dan kesalahan tidak diberi jeda tambahan.
 - Gangguan jaringan, timeout 15 detik, respons rusak, atau HTTP 5xx memunculkan pemulihan. Kesalahan validasi 4xx tetap ditampilkan di formulir.
 - Event offline/online ditangani langsung. Server diperiksa setiap 30 detik dengan GET /session saat aplikasi siap.
 - Pemulihan hanya membaca /session dan /bootstrap. Jeda percobaan 2, 5, 10, 20, lalu 30 detik; permintaan bersamaan digabung.
@@ -26,3 +26,7 @@ Panduan visual: ENERGY 3 / RHYTHM 2 / MOTION 1. Warna dan ilustrasi mengikuti re
 4. `src/ConnectionScreen.jsx`, `public/connection.css`, `index.html`: tampilan serta fallback HTML awal.
 
 Jalankan `node tests/connection.mjs`, `node tests/reconnection.mjs`, `npm test`, dan `npm run build`.
+
+Hasil browser: gangguan API HTTP 503 menampilkan layar pemulihan; tombol Coba Lagi dan Kembali ke Dashboard memeriksa ulang server. Saat server kembali normal, aplikasi memulihkan halaman otomatis. Berat 7,25 kg, catatan, dan diskon 12,5% tetap sama sebelum dan sesudah gangguan. Pengujian memakai server khusus port 8082 tanpa menulis transaksi. Lebar dokumen ponsel 389 px sama dengan viewport, tanpa overflow horizontal. Loading 20% terlihat saat pemeriksaan sesi sengaja diperlambat.
+
+Pemeriksaan visual: PASS identitas sesuai referensi dan gambar asli; PASS teks status/tombol berupa HTML; PASS tombol, fallback loading, error, dan retry aktif; PASS fokus keyboard dan reduced motion tersedia; PASS draft bertahan dalam simulasi; PASS build dan tes pemulihan. Huruf tulisan tangan menggunakan Caveat lokal, bukan gambar teks.

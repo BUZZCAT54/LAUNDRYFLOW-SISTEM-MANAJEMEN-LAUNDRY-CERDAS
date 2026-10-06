@@ -19,7 +19,7 @@ export default function ConnectionScreen({connection,onRetry,onDashboard}) {
     {loading?<div className="connection-loading-content">
      <h1 id="connection-title" ref={heading} tabIndex={-1}>Menyiapkan Aplikasi...</h1>
      <div className="connection-progress-row"><div className="connection-progress" role="progressbar" aria-label="Tahap persiapan aplikasi" aria-valuemin={0} aria-valuemax={100} aria-valuenow={connection.progress} aria-valuetext={connection.progress<65?'Memeriksa sesi':'Memuat data laundry'}><span style={{width:connection.progress+'%'}}/></div><b>{connection.progress}%</b></div>
-     <p role="status">{connection.progress<65?'Memeriksa sesi, mohon tunggu sebentar...':'Memuat data, mohon tunggu sebentar...'}</p>
+     <p role="status">{connection.progress===100?'Aplikasi siap. Membuka halaman...':connection.progress<65?'Memeriksa sesi, mohon tunggu sebentar...':'Memuat data, mohon tunggu sebentar...'}</p>
     </div>:<>
      <div className="connection-wifi" aria-hidden="true"><Wifi/><span>!</span></div>
      <h1 id="connection-title" ref={heading} tabIndex={-1}>{connection.phase==='error'?'Data Belum Dapat Dimuat':'Koneksi Terputus'}</h1>
