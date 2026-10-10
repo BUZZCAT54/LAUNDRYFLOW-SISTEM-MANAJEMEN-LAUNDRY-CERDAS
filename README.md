@@ -19,7 +19,7 @@ Halaman GitHub menampilkan source code, bukan aplikasi yang langsung bisa dibuka
 
 ## Mencoba preview yang sedang berjalan
 
-Buka **http://127.0.0.1:8080/#kasir** pada komputer ini. Jika halaman login tampil dan mode demo aktif, pilih **Buka demo kasir**. Di halaman kasir, **Isi contoh transaksi** mengisi draft contoh tanpa menyimpan transaksi.
+Buka **http://127.0.0.1:8080/#kasir** pada komputer ini. Jika halaman login tampil dan mode demo aktif, pilih **Buka demo kasir**. Di halaman Kasir, pilih pelanggan dan layanan, isi berat, periksa daftar cucian, lalu proses pembayaran. Nota yang sudah tersimpan bisa dilihat dan dicetak ulang di **Riwayat Nota**.
 
 Akun demo bawaan saat menyiapkan database demo baru:
 

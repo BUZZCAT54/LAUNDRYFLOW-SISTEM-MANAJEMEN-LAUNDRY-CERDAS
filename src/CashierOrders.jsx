@@ -5,7 +5,7 @@ import {
  FileText,MoreVertical,Package,Plus,Printer,Search,ShoppingBag
 } from 'lucide-react';
 import {dateText,localPhone,methodName,quantity,rupiah,statuses} from './lib';
-import {inPeriod,weeklyActivity} from './insights';
+import {inPeriod} from './insights';
 import {Empty,ErrorBox,Status} from './components';
 import {Pagination,ServiceName} from './ReferenceUI';
 import {dateMatches,exportExcel,orderWeight} from './referenceUtils';
@@ -32,11 +32,9 @@ function OrdersSummary({orders}) {
   <div className="orders-summary-grid">
    {SUMMARY_CARDS.map(({label,status,icon:Icon,tone})=>{
     const matching=scoped.filter(order=>status==='Semua'||order.status===status);
-    const activity=weeklyActivity(matching),peak=Math.max(1,...activity.map(day=>day.count));
     return <article key={status} className={`orders-summary-card orders-summary-card--${tone}`}>
      <span className="orders-summary-icon"><Icon size={28} strokeWidth={2}/></span>
      <div><strong>{matching.length}</strong><span>{label}</span></div>
-     <div className="orders-mini-bars" aria-hidden="true">{activity.map(day=><i key={day.date} style={{height:`${3+day.count/peak*25}px`}}/>)}</div>
     </article>;
    })}
   </div>
@@ -116,6 +114,7 @@ export default function CashierOrders({data,onSelect,print,go}) {
    </div>
    <div className="orders-toolbar-actions"><button className="secondary" onClick={excel}><Download size={17}/>Export Excel</button><button className="primary" onClick={()=>go('kasir')}><Plus size={20}/>Tambah Pesanan</button></div>
   </div>
+  <OrdersSummary orders={data.orders}/>
   <div className="orders-workspace">
    <div className="orders-main">
     <div className="orders-filters">
@@ -145,11 +144,8 @@ export default function CashierOrders({data,onSelect,print,go}) {
     </div>
     <Pagination page={current} total={orders.length} pageSize={10} onPage={value=>{setPage(value);setMenu(null);}}/>
    </div>
-   <aside className="orders-aside" aria-label="Ringkasan dan alur pesanan">
-    <OrdersSummary orders={data.orders}/><OrdersStatusGuide/>
-    <div className="orders-promo" role="img" aria-label="Pesanan lebih terkelola dan rapi. Laundry makin mudah!"/>
-   </aside>
   </div>
+  <OrdersStatusGuide/>
   {selectedMenuOrder&&createPortal(<div ref={menuRef} className="orders-action-menu" style={{left:menu.left,top:menu.top}} aria-label={'Opsi '+selectedMenuOrder.number}>
    <button onClick={()=>{setMenu(null);onSelect(selectedMenuOrder);}}><Eye size={16}/>Lihat detail</button>
    <button onClick={()=>{setMenu(null);print(selectedMenuOrder);}}><Printer size={16}/>Cetak nota</button>
