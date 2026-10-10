@@ -2,12 +2,20 @@
 
 Prototipe **frontend UI/UX dengan data mock**, terpisah dari aplikasi kasir. Tidak ada backend, API, database, atau autentikasi Owner. Perubahan pelanggan dan aktivitas hanya bertahan selama sesi halaman; refresh mengembalikan fixture awal.
 
-## Preview
+## Membuka preview Owner
 
-Dari folder aplikasi:
+Dari folder utama repo (yang berisi `package.json`):
 
 ```sh
+npm ci
 npm run owner:dev
+```
+
+Buka **http://127.0.0.1:5174/#login** di browser. Isi email/username dan kata sandi apa pun yang tidak kosong, lalu klik **Masuk**. Ini hanya simulasi login UI; tidak ada akun Owner atau autentikasi nyata. Biarkan server tetap berjalan selama preview dibuka.
+
+Untuk build dan tes, jalankan secara terpisah dari folder utama repo:
+
+```sh
 npm run owner:build
 node --test owner/tests/data.test.mjs owner/tests/management.test.mjs owner/tests/finance.test.mjs owner/tests/settings.test.mjs
 ```
@@ -22,7 +30,7 @@ node --test owner/tests/data.test.mjs owner/tests/management.test.mjs owner/test
 - Laporan & Analitik: http://127.0.0.1:5174/#laporan-keuangan (rute lama `#analytics` membuka tab Analitik)
 - Pengaturan: http://127.0.0.1:5174/#pengaturan
 
-Build disimpan di `dist-owner/`. Preview lokal sesi ini dijalankan oleh unit pengguna `syaqil-owner-preview`.
+Build disimpan di `dist-owner/`.
 
 ## Layar yang bisa dicoba
 

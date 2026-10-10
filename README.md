@@ -1,6 +1,21 @@
-# Syaqil Laundry — aplikasi kasir
+# Syaqil Laundry — Kasir dan Owner
 
-Aplikasi kasir desktop-first dengan tampilan biru/lime, logo dan elemen visual dari referensi yang diberikan. Frontend React menghasilkan HTML/CSS/JavaScript; API PHP menyimpan transaksi dalam MySQL/MariaDB. Lingkup versi ini adalah kasir, bukan pengelolaan bisnis oleh owner.
+Repo ini berisi aplikasi Kasir dan prototipe UI/UX Owner yang terpisah. Kasir menggunakan frontend React dan API PHP dengan MySQL/MariaDB. Owner berada di folder `owner/` dan saat ini memakai data demo tanpa backend atau autentikasi nyata.
+
+## Membuka halaman Owner
+
+Jalankan dari **folder utama repo** (folder yang berisi `package.json`), bukan dari folder `owner/`:
+
+```sh
+git clone https://github.com/BUZZCAT54/syaqil-laundry-terbaru.git
+cd syaqil-laundry-terbaru
+npm ci
+npm run owner:dev
+```
+
+Jika repo sudah ada di komputer, lewati `git clone` dan masuk ke folder repo tersebut. Setelah server siap, buka **http://127.0.0.1:5174/#login** di browser. Isi email/username dan kata sandi apa pun yang tidak kosong, lalu klik **Masuk** untuk melihat Dashboard Owner. Login ini hanya simulasi tampilan; tidak memeriksa akun sungguhan. Biarkan terminal server tetap berjalan saat menggunakan halaman Owner. Petunjuk dan daftar halaman lain ada di [README Owner](owner/README.md).
+
+Halaman GitHub menampilkan source code, bukan aplikasi yang langsung bisa dibuka. Preview Owner dijalankan secara lokal dengan perintah di atas.
 
 ## Mencoba preview yang sedang berjalan
 
@@ -43,7 +58,7 @@ Gunakan akun yang sudah dikonfigurasi apabila kredensial instalasi ini telah diu
 
 **Identitas usaha:** isi `BUSINESS_ADDRESS` dan `BUSINESS_PHONE` untuk mencantumkannya pada nota.
 
-**Owner:** halaman layanan/harga, akun karyawan, koreksi/pembatalan transaksi, keuangan lanjutan, pengeluaran, dan pengelolaan owner berada di luar lingkup implementasi kasir ini. Tidak ada endpoint pengubahan master atau pembatalan transaksi yang dibuka untuk kasir.
+**Owner:** halaman manajemen dan keuangan tersedia sebagai prototipe UI/UX terpisah dengan data demo. Halaman tersebut belum terhubung ke API atau database kasir. Tidak ada endpoint pengubahan master atau pembatalan transaksi yang dibuka untuk kasir.
 
 ## Menjalankan dari source
 
@@ -73,6 +88,7 @@ Untuk Apache, arahkan DocumentRoot/virtual host ke folder `public`, aktifkan `mo
 
 ```text
 src/                 UI kasir, dashboard, pesanan, pelanggan, nota
+owner/               Prototipe frontend Owner, aset, dan tesnya
 server/api.php       API autentikasi dan operasi kasir
 server/domain.php    Validasi, perhitungan, identitas checkout
 server/schema.sql    Skema MySQL/MariaDB
@@ -81,6 +97,7 @@ server/router.php    Routing API dan aset build
 scripts/setup.php    Setup dan migrasi awal
 public/              Front controller Apache dan aset sumber
 dist/                Hasil build frontend
+dist-owner/          Hasil build frontend Owner
 tests/               Pengujian domain dan integrasi API
 ```
 
