@@ -10,5 +10,9 @@ import '@fontsource/caveat/600.css';
 import OwnerApp from './OwnerApp.jsx';
 import './tokens.css';
 import './owner.css';
+import './screens.css';
+import './management.css';
+import './finance.css';
+import './settings.css';
 
 createRoot(document.getElementById('root')).render(<OwnerApp/>);

@@ -6,8 +6,13 @@ import {Status,Empty,ErrorBox} from './components';
 import {ReferenceBanner,StatCard,Pagination,ServiceName} from './ReferenceUI';
 import {exportExcel,orderWeight,dateMatches} from './referenceUtils';
 import {downloadReceipt} from './receiptPdf';
+import CashierOrders from './CashierOrders';
 
-export default function ReferenceOrders({data,onSelect,print,history=false,go}) {
+export default function ReferenceOrders(props) {
+ return props.history?<ReferenceOrderHistory {...props}/>:<CashierOrders {...props}/>;
+}
+
+function ReferenceOrderHistory({data,onSelect,print,history=false,go}) {
  const [search,setSearch]=useState(''),[status,setStatus]=useState('Semua'),[method,setMethod]=useState('all'),[period,setPeriod]=useState('all'),[paymentStatus,setPaymentStatus]=useState('all');
  const [from,setFrom]=useState(''),[to,setTo]=useState(''),[sort,setSort]=useState('newest'),[page,setPage]=useState(1);
  const [chosen,setChosen]=useState(data.orders[0]?.id??null),[paneOpen,setPaneOpen]=useState(true),[menu,setMenu]=useState(null),[pdfError,setPdfError]=useState('');

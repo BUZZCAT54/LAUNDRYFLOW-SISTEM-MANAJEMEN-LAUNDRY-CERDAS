@@ -8,7 +8,7 @@ export function Button({variant='primary',size='md',icon:Icon,loading=false,chil
 
 export function Input({label,helper,error,icon:Icon,id:givenId,className='',...props}){
   const generatedId=useId(),id=givenId||generatedId;
-  return <div className={`ui-field ${className}`}><label htmlFor={id}>{label}</label><div className={`ui-input-wrap ${error?'is-invalid':''}`}>{Icon&&<Icon size={18} aria-hidden="true"/>}<input id={id} aria-invalid={!!error} aria-describedby={error?`${id}-error`:helper?`${id}-help`:undefined} {...props}/></div>{error?<small className="ui-field-error" id={`${id}-error`} role="alert"><CircleAlert size={14}/>{error}</small>:helper?<small className="ui-field-help" id={`${id}-help`}>{helper}</small>:null}</div>;
+  return <div className={`ui-field ${className}`}><label htmlFor={id}>{label}</label><div className={`ui-input-wrap ${error?'is-invalid':''}`}>{Icon&&<Icon size={18} aria-hidden="true"/>}<input id={id} aria-invalid={!!error} aria-describedby={error?`${id}-error`:helper?`${id}-help`:undefined} {...props} onInput={props.onInput||(props.type==='date'?props.onChange:undefined)}/></div>{error?<small className="ui-field-error" id={`${id}-error`} role="alert"><CircleAlert size={14}/>{error}</small>:helper?<small className="ui-field-help" id={`${id}-help`}>{helper}</small>:null}</div>;
 }
 
 export function Select({label,options=[],helper,error,id:givenId,className='',...props}){
@@ -53,6 +53,8 @@ function Overlay({open,onClose,title,description,kind='modal',children,footer}){
     document.body.style.overflow='hidden';
     panelRef.current?.focus();
     const keydown=event=>{
+      const dialogs=document.querySelectorAll('.ui-overlay-panel[aria-modal="true"]');
+      if(dialogs[dialogs.length-1]!==panelRef.current)return;
       if(event.key==='Escape'){event.preventDefault();closeRef.current();}
       if(event.key!=='Tab')return;
       const targets=[...panelRef.current.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(element=>!element.disabled&&element.getClientRects().length);
