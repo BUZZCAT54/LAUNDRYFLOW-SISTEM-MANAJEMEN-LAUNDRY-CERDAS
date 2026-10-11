@@ -1,0 +1,69 @@
+/* Brand accents support the operational hierarchy without adding more content. */
+.reference-shell :is(.primary,.secondary,.service-card,.payment-methods button,.rd-metric,.orders-status-tabs button){
+ transition:background-color 160ms ease,border-color 160ms ease,box-shadow 160ms ease,transform 160ms ease;
+}
+.reference-shell :is(button,input,select,textarea,summary):focus-visible{
+ outline:3px solid #1267e8;outline-offset:3px;
+}
+.reference-shell :is(.ref-customer-search,.global-search):focus-within{
+ border-color:#1267e8;box-shadow:0 0 0 3px #1267e815;
+}
+.reference-shell :is(.rd-metric strong,.orders-summary-card strong,.biz-metric-copy>strong,.total-highlight strong){
+ font-variant-numeric:tabular-nums;letter-spacing:-.6px;
+}
+.reference-shell .orders-summary-card{
+ border-left:4px solid var(--stat-color);background:#fff;box-shadow:0 3px 12px #143a7506;
+}
+.reference-shell .orders-summary-icon{
+ background:color-mix(in srgb,var(--stat-color) 12%,white);color:var(--stat-color);
+}
+.reference-shell .orders-summary-card strong{font-size:27px}
+.reference-shell .orders-status-tabs button small{
+ display:inline-block;min-width:24px;padding:3px 5px;border-radius:6px;background:#e3eaff;color:#244790;font-weight:700;
+}
+.reference-shell .orders-status-tabs button.active small{background:#fff;color:#0646b6}
+.reference-shell .orders-customer{display:flex;align-items:center;gap:9px;color:#263650}
+.reference-shell .orders-customer b{font-size:11px;font-weight:600}
+.reference-shell .orders-customer-avatar{
+ display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:10px;
+ background:#eaf1ff;color:#0646b6;font-size:10px;font-weight:800;
+}
+.reference-shell .orders-table tbody tr[data-status="Selesai"]{background:#f5fcf8}
+.reference-shell .orders-table tbody tr[data-status="Selesai"] td:first-child{box-shadow:inset 3px 0 #08a564}
+.reference-shell .orders-table td:nth-child(6){font-weight:700;color:#263650;font-variant-numeric:tabular-nums}
+.reference-shell .orders-row-actions button{background:#f0f5ff}
+.reference-shell .orders-table .status{font-weight:600}
+.reference-shell .ref-customer-table tbody tr.is-selected{background:#eaf2ff}
+.reference-shell .ref-customer-table tbody tr.is-selected td:first-child{box-shadow:inset 3px 0 #1267e8}
+.reference-shell .ref-customer-detail-heading{border-bottom:1px solid #e7edf7;margin-bottom:12px}
+.reference-shell .ref-customer-large-avatar{border-radius:16px;box-shadow:0 0 0 5px #f3f7ff}
+.reference-shell .ref-cashier-page .payment-card{border-top:4px solid #1267e8}
+.reference-shell .ref-cashier-page .cashier-step{background:#0646b6;color:white}
+.reference-shell .ref-cashier-page .payment-card .cashier-step{background:#ccff2e;color:#253800}
+.reference-shell .ref-cashier-page .cart-empty svg{box-sizing:content-box;padding:12px;border-radius:14px;background:#edf3ff}
+.reference-shell .ref-cashier-page .total-highlight{border:1px solid #b9eb25;box-shadow:0 4px 0 #aacd3220}
+.reference-shell .ref-cashier-page :is(.service-card,.payment-methods button).selected{box-shadow:0 0 0 3px #1267e817,0 4px 12px #1267e81a}
+.reference-shell .rd-metric:focus-visible{box-shadow:0 6px 18px #1267e81c}
+@media(hover:hover){
+ .reference-shell :is(.primary,.secondary,.service-card,.payment-methods button,.rd-metric):not(:disabled):hover{
+  transform:translateY(-2px);box-shadow:0 5px 14px #0646b61c;
+ }
+ .reference-shell :is(.orders-table,.ref-table,.ref-customer-table) tbody tr:hover{background:#f0f5ff}
+ .reference-shell .orders-row-actions button:hover{background:#dce9ff}
+}
+.reference-shell :is(.primary,.secondary,.service-card,.payment-methods button,.rd-metric):not(:disabled):active{transform:translateY(0)}
+@media(prefers-reduced-motion:no-preference){
+ .reference-shell :is(.orders-summary-card,.rd-metric){animation:workspace-arrive 260ms ease-out both}
+ .reference-shell :is(.orders-summary-card,.rd-metric):nth-child(2){animation-delay:35ms}
+ .reference-shell :is(.orders-summary-card,.rd-metric):nth-child(3){animation-delay:70ms}
+ .reference-shell :is(.orders-summary-card,.rd-metric):nth-child(4){animation-delay:105ms}
+ @keyframes workspace-arrive{from{opacity:.4;translate:0 5px}to{opacity:1;translate:0 0}}
+}
+@media(prefers-reduced-motion:reduce){
+ .reference-shell :is(.primary,.secondary,.service-card,.payment-methods button,.rd-metric,.orders-status-tabs button){transition:none;transform:none}
+ .reference-shell :is(.primary,.secondary,.service-card,.payment-methods button,.rd-metric):not(:disabled):hover{transform:none}
+}
+@media(max-width:640px){
+ .reference-shell .orders-summary-card strong{font-size:24px}
+ .reference-shell .orders-customer-avatar{width:26px;height:26px;border-radius:8px;font-size:9px}
+}

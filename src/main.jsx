@@ -12,4 +12,5 @@ import App from './App.jsx';
 import './styles.css';
 import './reference.css';
 import './orders-reference.css';
+import './workspace-polish.css';
 createRoot(document.getElementById('root')).render(<App/>);
