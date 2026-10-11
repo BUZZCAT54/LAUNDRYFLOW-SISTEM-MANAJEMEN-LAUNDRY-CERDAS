@@ -1,0 +1,31 @@
+/* Animate only chart marks; totals, labels and tooltip targets stay stable. */
+@property --cashier-chart-sweep {
+ syntax: '<angle>';
+ inherits: false;
+ initial-value: 360deg;
+}
+.reference-shell :is(.rd-donut,.biz-donut){position:relative;isolation:isolate}
+.reference-shell .cashier-chart-ring{position:absolute;inset:0;border-radius:50%;pointer-events:none}
+.reference-shell :is(.rd-donut>span,.biz-donut>div){position:relative;z-index:1}
+.reference-shell .biz-bar{background:none}
+.reference-shell .cashier-chart-bar-fill{
+ position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+ background:linear-gradient(#0051ff 10%,#377cff 65%,#bad4ff);
+}
+@media(prefers-reduced-motion:no-preference){
+ .reference-shell :is(.rd-bar,.cashier-chart-bar-fill,.biz-spark i){
+  transform-origin:center bottom;
+  animation:cashier-chart-rise 600ms cubic-bezier(.22,1,.36,1) var(--chart-delay,0ms) both;
+ }
+ .reference-shell :is(.rd-service-track i,.biz-service-progress i){
+  transform-origin:left center;
+  animation:cashier-chart-fill 650ms cubic-bezier(.22,1,.36,1) var(--chart-delay,0ms) both;
+ }
+ .reference-shell .cashier-chart-ring{
+  mask-image:conic-gradient(#000 0deg var(--cashier-chart-sweep),transparent var(--cashier-chart-sweep) 360deg);
+  animation:cashier-chart-sweep 800ms cubic-bezier(.22,1,.36,1) both;
+ }
+ @keyframes cashier-chart-rise{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+ @keyframes cashier-chart-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+ @keyframes cashier-chart-sweep{from{--cashier-chart-sweep:0deg}to{--cashier-chart-sweep:360deg}}
+}

@@ -13,4 +13,5 @@ import './styles.css';
 import './reference.css';
 import './orders-reference.css';
 import './workspace-polish.css';
+import './chart-motion.css';
 createRoot(document.getElementById('root')).render(<App/>);
