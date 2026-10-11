@@ -14,5 +14,6 @@ import './screens.css';
 import './management.css';
 import './finance.css';
 import './settings.css';
+import './chart-motion.css';
 
 createRoot(document.getElementById('root')).render(<OwnerApp/>);

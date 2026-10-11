@@ -1,0 +1,45 @@
+/* Keep chart controls and labels stationary while their data marks enter. */
+@property --owner-chart-sweep {
+ syntax: '<angle>';
+ inherits: false;
+ initial-value: 360deg;
+}
+:is(.ow-donut,.fn-donut){position:relative;isolation:isolate}
+.owner-chart-ring{position:absolute;inset:0;border-radius:50%;pointer-events:none}
+:is(.ow-donut,.fn-donut)>div{position:relative;z-index:1}
+.fn-bar-cell>.fn-bar{background:none}
+.owner-chart-bar-fill{
+ position:absolute;inset:0;display:flex;flex-direction:column-reverse;
+ border-radius:inherit;overflow:hidden;pointer-events:none;
+ background:linear-gradient(110deg,#adcaff,#c0d6ff);
+}
+.is-highlighted>.fn-bar>.owner-chart-bar-fill{background:linear-gradient(#0758ff,#0049fe)}
+.is-stacked .fn-bar>.owner-chart-bar-fill{background:none}
+.fn-heatmap-grid button{position:relative;background:#edf4fe}
+.owner-heat-fill{position:absolute;inset:0;border-radius:inherit;pointer-events:none}
+@media(prefers-reduced-motion:no-preference){
+ :is(.owner-chart-bar-fill,.ow-minibars i){
+  transform-origin:center bottom;
+  animation:owner-chart-rise 600ms cubic-bezier(.22,1,.36,1) var(--chart-delay,0ms) both;
+ }
+ .fn-progress>i{
+  transform-origin:left center;
+  animation:owner-chart-fill 650ms cubic-bezier(.22,1,.36,1) var(--chart-delay,0ms) both;
+ }
+ .owner-chart-ring{
+  mask-image:conic-gradient(#000 0deg var(--owner-chart-sweep),transparent var(--owner-chart-sweep) 360deg);
+  animation:owner-chart-sweep 800ms cubic-bezier(.22,1,.36,1) both;
+ }
+ .owner-chart-line{
+  stroke-dasharray:1;
+  animation:owner-chart-draw 800ms cubic-bezier(.22,1,.36,1) both;
+ }
+ :is(.owner-chart-dot,.owner-chart-area,.owner-heat-fill){
+  animation:owner-chart-reveal 450ms ease-out var(--chart-delay,0ms) both;
+ }
+ @keyframes owner-chart-rise{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+ @keyframes owner-chart-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+ @keyframes owner-chart-sweep{from{--owner-chart-sweep:0deg}to{--owner-chart-sweep:360deg}}
+ @keyframes owner-chart-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+ @keyframes owner-chart-reveal{from{opacity:0}to{opacity:1}}
+}

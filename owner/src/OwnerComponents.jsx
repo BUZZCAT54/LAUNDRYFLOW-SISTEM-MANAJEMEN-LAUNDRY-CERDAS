@@ -19,7 +19,7 @@ export function PageBanner({kind,title,description}){
 }
 export function MiniBars({values=[2,5,4,7,6,10],tone='blue'}){
  const peak=Math.max(1,...values);
- return <div className={`ow-minibars ow-tone-${tone}`} aria-hidden="true">{values.map((value,i)=><i key={i} style={{height:`${6+value/peak*30}px`}}/>)}</div>;
+ return <div className={`ow-minibars ow-tone-${tone}`} aria-hidden="true">{values.map((value,i)=><i key={`${i}-${value}-${peak}`} style={{height:`${6+value/peak*30}px`,'--chart-delay':`${Math.min(i*35,245)}ms`}}/>)}</div>;
 }
 export function Metric({label,value,icon:Icon,tone='blue',trend,caption='dari bulan sebelumnya',soft=false,values,detail}){
  const Down=trend<0?ArrowDown:ArrowUp;

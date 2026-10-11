@@ -7,7 +7,7 @@ import {dailyBusiness,dashboardPeriods,dateLabel,money} from './mockData';
 function OrderStatus({values,total}){
  const labels=['Selesai','Diproses','Diterima','Diambil'],colors=['#4dcc69','#ffd84c','#2775ff','#a344fa'];
  let angle=0;const segments=values.map((n,i)=>{const start=angle;angle+=n/total*100;return `${colors[i]} ${start}% ${angle}%`;});
- return <Panel title="Status Pesanan" icon={BadgeCheck} className="ow-status-panel"><div className="ow-status-body"><div className="ow-donut" role="img" aria-label={labels.map((label,i)=>`${label} ${values[i]}`).join(', ')} style={{background:`conic-gradient(${segments.join(',')})`}}><div><strong>{total}</strong><small>Total</small></div></div><ul>{labels.map((label,i)=><li key={label}><i style={{background:colors[i]}}/><span>{label}</span><b>{values[i]}</b><small>{Math.round(values[i]/total*100)}%</small></li>)}</ul></div></Panel>;
+ return <Panel title="Status Pesanan" icon={BadgeCheck} className="ow-status-panel"><div className="ow-status-body"><div className="ow-donut" role="img" aria-label={labels.map((label,i)=>`${label} ${values[i]}`).join(', ')} ><i className="owner-chart-ring" aria-hidden="true" key={values.join()} style={{background:`conic-gradient(${segments.join(',')})`}}/><div><strong>{total}</strong><small>Total</small></div></div><ul>{labels.map((label,i)=><li key={label}><i style={{background:colors[i]}}/><span>{label}</span><b>{values[i]}</b><small>{Math.round(values[i]/total*100)}%</small></li>)}</ul></div></Panel>;
 }
 
 function OperationalFocus({corrections,expenses,receipts,navigate}){
