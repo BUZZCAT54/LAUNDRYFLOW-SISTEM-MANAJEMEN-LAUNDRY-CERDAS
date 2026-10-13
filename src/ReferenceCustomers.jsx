@@ -1,5 +1,5 @@
 import React, {useMemo, useState} from 'react';
-import {Users, Crown, Heart, Star, Search, Plus, Download, Upload, MoreVertical, Pencil, Phone, MapPin, CalendarDays, ReceiptText, ShoppingCart, FileText, Copy, Check, ChevronRight, ArrowRight} from 'lucide-react';
+import {Users, Crown, Heart, Star, Search, Plus, Download, Upload, MoreVertical, Pencil, Phone, CalendarDays, ReceiptText, ShoppingCart, FileText, Copy, Check, ChevronRight, ArrowRight} from 'lucide-react';
 import {api, rupiah, localPhone, dateText, quantity} from './lib';
 import {Modal, Empty, ErrorBox} from './components';
 import {CustomerForm} from './Cashier';
@@ -9,7 +9,7 @@ import {jakartaDate} from './insights';
 import './customer-reference.css';
 
 const PAGE_SIZE = 10;
-const tabs = ['Riwayat Transaksi', 'Catatan', 'Alamat', 'Loyalty'];
+const tabs = ['Riwayat Transaksi', 'Catatan', 'Loyalty'];
 const normalizedPhone = value => String(value || '').replace(/[\s()+-]/g, '').replace(/^0/, '62');
 
 function summaries(customers, orders) {
@@ -38,7 +38,6 @@ function CustomerEditor({customer, onClose, onSaved, focusNotes = false}) {
   <form className="customer-form" onSubmit={save}>
    <label htmlFor="edit-customer-name">Nama pelanggan *</label><input id="edit-customer-name" autoFocus={!focusNotes} required minLength="2" maxLength="100" value={form.name} onChange={event => setForm({...form, name: event.target.value})}/>
    <label htmlFor="edit-customer-phone">No. WhatsApp *</label><input id="edit-customer-phone" type="tel" required value={form.phone} onChange={event => setForm({...form, phone: event.target.value})}/>
-   <label htmlFor="edit-customer-address">Alamat</label><textarea id="edit-customer-address" maxLength="300" value={form.address} onChange={event => setForm({...form, address: event.target.value})}/>
    <label htmlFor="edit-customer-notes">Catatan pelanggan</label><textarea id="edit-customer-notes" autoFocus={focusNotes} maxLength="1000" placeholder="Contoh: pisahkan pakaian putih." value={form.notes} onChange={event => setForm({...form, notes: event.target.value})}/>
    <ErrorBox message={error}/><div className="modal-actions"><button type="button" className="secondary" disabled={busy} onClick={onClose}>Batal</button><button className="primary" disabled={busy}>{busy ? 'Menyimpan...' : 'Simpan perubahan'}</button></div>
   </form>
@@ -75,19 +74,17 @@ function ImportCustomers({customers, onCustomer, onClose}) {
    const headings = (parsed.shift() || []).map(heading => heading.toLowerCase().trim());
    const nameIndex = headings.findIndex(heading => ['nama', 'name'].includes(heading));
    const phoneIndex = headings.findIndex(heading => ['telepon', 'phone', 'whatsapp', 'no hp', 'no. hp'].includes(heading));
-   const addressIndex = headings.findIndex(heading => ['alamat', 'address'].includes(heading));
-   if (nameIndex < 0 || phoneIndex < 0) throw new Error('Baris pertama harus memiliki kolom nama dan whatsapp. Kolom alamat boleh dikosongkan.');
+   if (nameIndex < 0 || phoneIndex < 0) throw new Error('Baris pertama harus memiliki kolom nama dan whatsapp.');
    if (!parsed.length || parsed.length > 100) throw new Error('Impor 1–100 pelanggan dalam satu file.');
    const known = new Set(customers.map(customer => normalizedPhone(customer.phone)));
    setEntries(parsed.map((values, index) => {
-    const name = values[nameIndex] || '', phone = normalizedPhone(values[phoneIndex]), address = values[addressIndex] || '';
+    const name = values[nameIndex] || '', phone = normalizedPhone(values[phoneIndex]);
     let issue = '';
     if (name.length < 2 || name.length > 100) issue = 'Nama harus 2–100 karakter';
     else if (!/^628[1-9]\d{7,10}$/.test(phone)) issue = 'Nomor WhatsApp tidak valid';
-    else if (address.length > 300) issue = 'Alamat terlalu panjang';
     else if (known.has(phone)) issue = 'Nomor sudah terdaftar / duplikat';
     if (!issue) known.add(phone);
-    return {name, phone, address, row: index + 2, issue, status: issue ? 'skip' : 'ready'};
+    return {name, phone, row: index + 2, issue, status: issue ? 'skip' : 'ready'};
    }));
   } catch (failure) { setError(failure.message); }
  }
@@ -96,7 +93,7 @@ function ImportCustomers({customers, onCustomer, onClose}) {
   for (let index = 0; index < entries.length; index++) {
    const entry = entries[index]; if (entry.status !== 'ready') continue;
    try {
-    const result = await api('/customers', {name: entry.name, phone: entry.phone, address: entry.address}); onCustomer(result.customer);
+    const result = await api('/customers', {name: entry.name, phone: entry.phone}); onCustomer(result.customer);
     setEntries(current => current.map((item, at) => at === index ? {...item, status: 'saved'} : item));
    } catch (failure) {
     setEntries(current => current.map((item, at) => at === index ? {...item, status: 'failed', issue: failure.message} : item));
@@ -106,7 +103,7 @@ function ImportCustomers({customers, onCustomer, onClose}) {
  }
  const ready = entries.filter(entry => entry.status === 'ready').length, saved = entries.filter(entry => entry.status === 'saved').length;
  return <Modal title="Import data pelanggan" onClose={() => !busy && onClose()} wide>
-  <p className="modal-description">Unggah CSV dengan kolom <b>nama, whatsapp, alamat</b>. Nomor yang sudah terdaftar akan dilewati.</p>
+  <p className="modal-description">Unggah CSV dengan kolom <b>nama, whatsapp</b>. Nomor yang sudah terdaftar akan dilewati.</p>
   <label className="ref-customer-upload"><Upload size={22}/><span>Pilih file CSV <small>Maksimal 100 pelanggan · 100 KB</small></span><input type="file" accept=".csv,text/csv" aria-label="File CSV pelanggan" disabled={busy} onChange={read}/></label>
   <ErrorBox message={error}/>
   {!!entries.length && <><div className="ref-import-summary">{finished ? `${saved} pelanggan berhasil disimpan.` : `${ready} pelanggan siap diimpor.`} {entries.length - ready - saved > 0 && `${entries.length - ready - saved} baris dilewati atau gagal.`}</div><div className="ref-import-preview"><table><thead><tr><th>Baris</th><th>Nama</th><th>WhatsApp</th><th>Status</th></tr></thead><tbody>{entries.map(entry => <tr key={entry.row}><td>{entry.row}</td><td>{entry.name || '—'}</td><td>{localPhone(entry.phone)}</td><td className={entry.issue ? 'ref-import-error' : ''}>{entry.status === 'saved' ? 'Tersimpan' : entry.issue || 'Siap diimpor'}</td></tr>)}</tbody></table></div></>}
@@ -130,7 +127,7 @@ export default function ReferenceCustomers({data, onCustomer, onSelect, go}) {
  function checkPage() { setChecked(current => { const next = new Set(current), remove = visible.every(customer => next.has(customer.id)); visible.forEach(customer => remove ? next.delete(customer.id) : next.add(customer.id)); return next; }); }
  function exportCustomers() {
   const rows = checked.size ? customers.filter(customer => checked.has(customer.id)) : filtered;
-  exportExcel('Pelanggan-Syaqil-Laundry', ['Nama Pelanggan', 'WhatsApp', 'Alamat', 'Total Transaksi', 'Total Belanja', 'Kategori', 'Status', 'Catatan'], rows.map(customer => [customer.name, localPhone(customer.phone), customer.address, customer.visits, customer.spend, customer.category, customer.isActive ? 'Aktif' : 'Tidak Aktif', customer.notes || '']));
+  exportExcel('Pelanggan-Syaqil-Laundry', ['Nama Pelanggan', 'WhatsApp', 'Total Transaksi', 'Total Belanja', 'Kategori', 'Status', 'Catatan'], rows.map(customer => [customer.name, localPhone(customer.phone), customer.visits, customer.spend, customer.category, customer.isActive ? 'Aktif' : 'Tidak Aktif', customer.notes || '']));
  }
  async function copyPhone() {
   try { await navigator.clipboard.writeText(localPhone(selected.phone)); setCopied(true); setFeedback('Nomor WhatsApp disalin.'); }
@@ -156,13 +153,12 @@ export default function ReferenceCustomers({data, onCustomer, onSelect, go}) {
    </section>
    <aside className="ref-customer-detail" aria-label="Detail pelanggan">
     <div className="ref-customer-detail-heading"><h2>Detail Pelanggan</h2>{selected && <button className="secondary" onClick={() => setEdit({customer: selected})}><Pencil size={14}/> Edit</button>}</div>
-    {selected ? <><div className="ref-customer-overview"><div className="ref-customer-bio"><div className="ref-customer-identity"><span className="ref-customer-large-avatar">{initials(selected.name)}</span><div><h3>{selected.name}</h3><span className={'ref-loyalty-badge ' + (selected.visits >= 5 ? 'loyal' : '')}><Crown size={12}/>{selected.visits >= 5 ? 'Pelanggan Setia' : 'Pelanggan Syaqil'}</span></div></div><span className={'ref-customer-status profile-status ' + (selected.isActive ? 'active' : 'inactive')}>{selected.isActive ? 'Aktif' : 'Tidak Aktif'}</span><div className="ref-customer-contacts"><div><Phone size={16}/><span>{localPhone(selected.phone)}</span><button aria-label="Salin nomor WhatsApp" onClick={copyPhone}>{copied ? <Check size={14}/> : <Copy size={14}/>}</button></div><div><MapPin size={16}/><span>{selected.address || 'Alamat belum ditambahkan'}</span></div></div></div><div className="ref-customer-summary"><div><span><CalendarDays size={17}/></span><p>Member Sejak<b>{dateText(selected.created_at)}</b></p></div><div><span><ReceiptText size={17}/></span><p>Total Transaksi<b>{selected.visits} kali</b></p></div><div><span><ShoppingCart size={17}/></span><p>Total Belanja<b>{rupiah(selected.spend)}</b></p></div></div></div>
+    {selected ? <><div className="ref-customer-overview"><div className="ref-customer-bio"><div className="ref-customer-identity"><span className="ref-customer-large-avatar">{initials(selected.name)}</span><div><h3>{selected.name}</h3><span className={'ref-loyalty-badge ' + (selected.visits >= 5 ? 'loyal' : '')}><Crown size={12}/>{selected.visits >= 5 ? 'Pelanggan Setia' : 'Pelanggan Syaqil'}</span></div></div><span className={'ref-customer-status profile-status ' + (selected.isActive ? 'active' : 'inactive')}>{selected.isActive ? 'Aktif' : 'Tidak Aktif'}</span><div className="ref-customer-contacts"><div><Phone size={16}/><span>{localPhone(selected.phone)}</span><button aria-label="Salin nomor WhatsApp" onClick={copyPhone}>{copied ? <Check size={14}/> : <Copy size={14}/>}</button></div></div></div><div className="ref-customer-summary"><div><span><CalendarDays size={17}/></span><p>Member Sejak<b>{dateText(selected.created_at)}</b></p></div><div><span><ReceiptText size={17}/></span><p>Total Transaksi<b>{selected.visits} kali</b></p></div><div><span><ShoppingCart size={17}/></span><p>Total Belanja<b>{rupiah(selected.spend)}</b></p></div></div></div>
     <div className="ref-customer-tabs" role="tablist" aria-label="Informasi pelanggan">{tabs.map(label => <button key={label} role="tab" aria-selected={tab === label} aria-controls="customer-tab-panel" className={tab === label ? 'active' : ''} onClick={() => setTab(label)}>{label}</button>)}</div>
     <div id="customer-tab-panel" role="tabpanel" aria-label={tab} className="ref-customer-tab-content">
      {tab === tabs[0] && (selectedOrders.length ? <div className="ref-customer-history-wrap"><table className="ref-customer-history"><thead><tr><th>No. Nota</th><th>Tanggal</th><th>Layanan</th><th>Berat</th><th>Total</th><th>Status</th></tr></thead><tbody>{selectedOrders.map(order => <tr key={order.id}><td><button onClick={() => onSelect(order)}>{order.number}</button></td><td>{dateText(order.created_at)}</td><td>{[...new Set(order.items.map(item => item.service_name))].join(', ')}</td><td>{quantity(order.items.reduce((total, item) => total + Number(item.quantity), 0))} kg</td><td>{rupiah(order.total)}</td><td><span className="ref-customer-status active">Lunas</span></td></tr>)}</tbody></table></div> : <div className="ref-customer-empty"><ReceiptText size={27}/><b>Belum ada transaksi</b><p>Nota pelanggan akan muncul setelah pembayaran disimpan.</p><button onClick={() => go('kasir')}>Buat transaksi <ArrowRight size={14}/></button></div>)}
      {tab === tabs[1] && <div className="ref-profile-notes"><h3>Catatan pelanggan</h3><p>{selected.notes || 'Belum ada catatan khusus untuk pelanggan ini.'}</p><button className="text-button" onClick={() => setEdit({customer: selected, focusNotes: true})}><Pencil size={14}/> Edit catatan</button>{selectedOrders.filter(order => order.notes).length > 0 && <><h3>Catatan dari pesanan</h3>{selectedOrders.filter(order => order.notes).slice(0, 5).map(order => <div className="ref-order-note" key={order.id}><button onClick={() => onSelect(order)}>{order.number}<ChevronRight size={13}/></button><p>{order.notes}</p></div>)}</>}</div>}
-     {tab === tabs[2] && <div className="ref-profile-address"><MapPin size={25}/><h3>Alamat pelanggan</h3><p>{selected.address || 'Alamat belum ditambahkan.'}</p><button className="text-button" onClick={() => setEdit({customer: selected})}><Pencil size={14}/> Edit alamat</button></div>}
-     {tab === tabs[3] && <div className="ref-profile-loyalty"><span><Crown size={30}/></span><h3>{selected.visits >= 5 ? 'Pelanggan Setia' : 'Setiap kunjungan berarti'}</h3><p>{selected.visits} transaksi tersimpan</p><div className="ref-loyalty-progress" aria-label={`${Math.min(selected.visits, 5)} dari 5 kunjungan`}>{Array.from({length: 5}, (_, index) => <span key={index} className={selected.visits > index ? 'complete' : ''}>{selected.visits > index ? <Check size={16}/> : index + 1}</span>)}</div><small>{selected.visits >= 5 ? 'Sudah bertransaksi minimal 5 kali di Syaqil Laundry.' : `${5 - selected.visits} transaksi lagi untuk kategori Pelanggan Setia.`}</small></div>}
+     {tab === tabs[2] && <div className="ref-profile-loyalty"><span><Crown size={30}/></span><h3>{selected.visits >= 5 ? 'Pelanggan Setia' : 'Setiap kunjungan berarti'}</h3><p>{selected.visits} transaksi tersimpan</p><div className="ref-loyalty-progress" aria-label={`${Math.min(selected.visits, 5)} dari 5 kunjungan`}>{Array.from({length: 5}, (_, index) => <span key={index} className={selected.visits > index ? 'complete' : ''}>{selected.visits > index ? <Check size={16}/> : index + 1}</span>)}</div><small>{selected.visits >= 5 ? 'Sudah bertransaksi minimal 5 kali di Syaqil Laundry.' : `${5 - selected.visits} transaksi lagi untuk kategori Pelanggan Setia.`}</small></div>}
     </div>
     <div className="ref-customer-note-card"><FileText size={25}/><div><b>Catatan Pelanggan</b><p>{selected.notes || 'Tambahkan preferensi atau perhatian khusus pelanggan.'}</p></div><button aria-label="Edit catatan pelanggan" onClick={() => setEdit({customer: selected, focusNotes: true})}><Pencil size={13}/> Edit</button></div>
     </> : <div className="ref-customer-empty"><Users size={30}/><b>Pilih pelanggan</b><p>Detail dan riwayat transaksi tampil di sini.</p></div>}
