@@ -7,11 +7,13 @@ globalThis.window={dispatchEvent:event=>events.push(event.type)};
 globalThis.CustomEvent=class {constructor(type){this.type=type;}};
 try {
  let calls=0;
- globalThis.fetch=async()=>{calls++;throw new TypeError('Failed to fetch');};
- await assert.rejects(api('/orders',{request_key:'keep-this-key'}),error=>error.connection===true);
- assert.equal(calls,1,'A failed payment must never be replayed automatically');
- assert.deepEqual(events,['syaqil:connection-lost']);
- events.length=0;
+  globalThis.fetch=async()=>{calls++;throw new TypeError('Failed to fetch');};
+  await assert.rejects(api('/orders',{request_key:'keep-this-key'}),error=>error.connection===true);
+  assert.equal(calls,1,'A failed payment must never be replayed automatically');
+  assert.deepEqual(events,[],'Action failures must stay in their form, not hijack the app shell');
+  await assert.rejects(api('/session'),error=>error.connection===true);
+  assert.deepEqual(events,['syaqil:connection-lost']);
+  events.length=0;
  globalThis.fetch=async()=>new Response(JSON.stringify({error:'Berat tidak valid'}),{status:422});
  await assert.rejects(api('/orders',{}),error=>error.status===422&&!error.connection);
  assert.equal(events.length,0,'Validation errors must not show reconnection');

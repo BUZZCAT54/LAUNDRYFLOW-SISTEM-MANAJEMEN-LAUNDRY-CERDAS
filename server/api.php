@@ -52,6 +52,20 @@ try {
     $_SESSION['csrf'] ??= bin2hex(random_bytes(32));
     $route=substr(parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH),4) ?: '/';
     $method=$_SERVER['REQUEST_METHOD'];
+    if ($method === 'GET' && $route === '/health') {
+        $status=['ok'=>false,'db'=>false,'tables'=>[],'demo'=>demoMode(),'time'=>date('c')];
+        try {
+            db()->query('SELECT 1');
+            $status['db']=true;
+            foreach (['users','orders','customers','services','sessions'] as $t) {
+                try { db()->query("SELECT 1 FROM `$t` LIMIT 1"); $status['tables'][$t]=true; }
+                catch (Throwable $ignored) { $status['tables'][$t]=false; }
+            }
+            $status['ok']=!in_array(false,$status['tables'],true);
+            if (!$status['ok']) $status['error']='Database terhubung, tetapi ada tabel yang belum dimigrasi. Jalankan scripts/setup.php ke database ini.';
+        } catch (Throwable $ignored) { $status['error']='Database tidak dapat dihubungi. Periksa DB_DSN/DB_USER/DB_PASSWORD di environment Vercel.'; }
+        reply($status);
+    }
     if ($method === 'GET' && $route === '/session') reply(['user'=>$_SESSION['user'] ?? null,'csrf'=>$_SESSION['csrf'],'settings'=>settings()]);
     if ($method !== 'GET' && !hash_equals($_SESSION['csrf'],$_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) reply(['error'=>'Sesi kedaluwarsa. Muat ulang halaman.'],419);
     $raw=file_get_contents('php://input');

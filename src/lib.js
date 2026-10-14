@@ -19,14 +19,18 @@ export async function api(path,body,{timeout=15000}={}) {
   if(!data||typeof data!=='object'||Array.isArray(data)) throw new SyntaxError('Respons server tidak valid.');
   if(data.csrf) csrf=data.csrf;
   return data;
- } catch(error) {
-  if(error.connection||error instanceof TypeError||error instanceof SyntaxError||error.name==='AbortError') {
-   const connectionError=new Error(error.name==='AbortError'?'Server belum merespons. Mencoba menghubungkan kembali.':'Koneksi ke server terputus. Periksa jaringan Anda.',{cause:error});
-   connectionError.connection=true;
-   connectionError.status=error.status;
-   if(typeof window!=='undefined') window.dispatchEvent(new CustomEvent('syaqil:connection-lost'));
-   throw connectionError;
-  }
+  } catch(error) {
+   if(error.connection||error instanceof TypeError||error instanceof SyntaxError||error.name==='AbortError') {
+    const connectionError=new Error(error.name==='AbortError'?'Server belum merespons. Mencoba menghubungkan kembali.':'Koneksi ke server terputus. Periksa jaringan Anda.',{cause:error});
+    connectionError.connection=true;
+    connectionError.status=error.status;
+    // Hanya polling sesi/data (/session, /bootstrap) yang boleh memicu layar
+    // pemulihan global. Kegagalan aksi (login, simpan order, dsb) harus tampil
+    // di formulirnya sendiri, bukan membajak seluruh aplikasi ke layar terputus.
+    const isPolling=body===undefined&&(path==='/session'||path==='/bootstrap');
+    if(isPolling&&typeof window!=='undefined') window.dispatchEvent(new CustomEvent('syaqil:connection-lost'));
+    throw connectionError;
+   }
   throw error;
  } finally {clearTimeout(timer);}
 }
