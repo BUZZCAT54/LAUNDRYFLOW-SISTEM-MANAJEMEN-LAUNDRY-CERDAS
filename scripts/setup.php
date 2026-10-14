@@ -3,6 +3,7 @@ require __DIR__.'/../server/config.php';
 require __DIR__.'/../server/domain.php';
 if(PHP_SAPI !== 'cli') exit('CLI only');
 db()->exec(file_get_contents(__DIR__.'/../server/schema.sql'));
+require __DIR__.'/migrate-pay-later.php';
 if (!db()->query("SHOW COLUMNS FROM orders LIKE 'request_hash'")->fetch()) db()->exec('ALTER TABLE orders ADD COLUMN request_hash CHAR(64) NULL AFTER request_key');
 if (!db()->query("SHOW COLUMNS FROM orders LIKE 'discount_percent'")->fetch()) db()->exec('ALTER TABLE orders ADD COLUMN discount_percent DECIMAL(5,2) NULL AFTER subtotal');
 if (!db()->query("SHOW COLUMNS FROM customers LIKE 'notes'")->fetch()) db()->exec("ALTER TABLE customers ADD COLUMN notes VARCHAR(1000) NOT NULL DEFAULT '' AFTER address");

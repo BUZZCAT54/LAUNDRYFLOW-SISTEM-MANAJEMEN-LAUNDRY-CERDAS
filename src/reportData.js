@@ -1,3 +1,4 @@
+import {collectedTotal} from './payment.js';
 export const offsetDay=(date,offset)=>{const day=new Date(date+'T00:00:00Z');day.setUTCDate(day.getUTCDate()+offset);return day.toISOString().slice(0,10);};
 export const daysBetween=(from,to)=>Math.round((Date.parse(to)-Date.parse(from))/86400000)+1;
 export function previousRange(from,to,comparison){
@@ -15,13 +16,13 @@ export function aggregateReport(data,from,to){
  const days=new Map();
  for(let date=from;date<=to;date=offsetDay(date,1))days.set(date,{date,count:0,revenue:0,weight:0,customers:0});
  const services=new Map((data.services||[]).map(service=>[String(service.id),{name:service.name,count:0}]));
- const methods=new Map([['cash',0],['qris',0],['transfer',0],['other',0]]);
+ const methods=new Map([['cash',0],['qris',0],['transfer',0],['later',0],['other',0]]);
  const statuses=new Map(['Selesai','Diproses','Diterima','Diambil','Dibatalkan'].map(status=>[status,0]));
  let revenue=0,weight=0;
  for(const order of orders){
   const row=days.get(order.created_at.slice(0,10));
   const kg=order.items.filter(item=>item.unit==='kg').reduce((sum,item)=>sum+Number(item.quantity),0);
-  revenue+=Number(order.total);weight+=kg;row.count++;row.revenue+=Number(order.total);row.weight+=kg;
+  revenue+=collectedTotal(order);weight+=kg;row.count++;row.revenue+=collectedTotal(order);row.weight+=kg;
   const method=methods.has(order.method)?order.method:'other';methods.set(method,methods.get(method)+1);
   statuses.set(order.status,(statuses.get(order.status)||0)+1);
   const seen=new Set();

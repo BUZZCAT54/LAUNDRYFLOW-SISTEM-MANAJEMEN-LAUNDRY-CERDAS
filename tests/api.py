@@ -63,4 +63,18 @@ request('/session');request('/login',{'username':'kasir','password':'KasirDemo!2
 _,after=request('/bootstrap')
 persisted=next(x for x in after['orders'] if x['id']==o['id'])
 check(persisted['status']=='Diambil' and int(persisted['total'])==22950 and float(persisted['discount_percent'])==10,'Order and percentage survive a fresh session')
+later={**body,'request_key':str(uuid.uuid4()),'method':'later','paid':0,'discount_percent':0,'expected_total':25500}
+status,pending=request('/orders',later)
+check(status==201 and pending['order']['method']=='later' and int(pending['order']['paid'])==0,'Deferred payment persists without received money')
+pending_id=pending['order']['id']
+check(request('/orders',later)[1]['order']['id']==pending_id,'Deferred checkout retry keeps the same note')
+payment_path='/orders/'+str(pending_id)+'/payment'
+check(request(payment_path,{'method':'cash','paid':25499})[0]==422,'Settlement rejects insufficient cash')
+check(request(payment_path,{'method':'later','paid':0})[0]==422,'Settlement cannot defer again')
+check(request(payment_path,{'method':'qris','confirmed':False})[0]==422,'Settlement requires confirmed non-cash payment')
+status,settled=request(payment_path,{'method':'cash','paid':30000})
+check(status==200 and int(settled['order']['change_amount'])==4500,'Settlement updates the original order with change')
+retry=request(payment_path,{'method':'cash','paid':50000})[1]['order']
+check(int(retry['paid'])==30000,'Duplicate settlement cannot overwrite received amount')
+check(request('/orders',later)[1]['order']['method']=='cash','Old checkout retry returns the settled note')
 print('ALL API CHECKS PASSED')

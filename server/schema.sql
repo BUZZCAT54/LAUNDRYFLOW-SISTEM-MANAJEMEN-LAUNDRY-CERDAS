@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS orders (
  id BIGINT PRIMARY KEY AUTO_INCREMENT, number VARCHAR(40) NULL UNIQUE, request_key VARCHAR(80) NOT NULL UNIQUE, request_hash CHAR(64) NULL,
  customer_id BIGINT NOT NULL, cashier_id BIGINT NOT NULL, customer_name VARCHAR(100) NOT NULL, customer_phone VARCHAR(20) NOT NULL,
  subtotal INT UNSIGNED NOT NULL, discount_percent DECIMAL(5,2) NULL, discount INT UNSIGNED NOT NULL DEFAULT 0, total INT UNSIGNED NOT NULL,
- method ENUM('cash','qris','transfer') NOT NULL, paid INT UNSIGNED NOT NULL, change_amount INT UNSIGNED NOT NULL,
+ method ENUM('cash','qris','transfer','later') NOT NULL, paid INT UNSIGNED NOT NULL, change_amount INT UNSIGNED NOT NULL,
  status ENUM('Diterima','Diproses','Selesai','Diambil') NOT NULL DEFAULT 'Diterima', notes VARCHAR(1000) NOT NULL DEFAULT '',
  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, due_at DATETIME NULL,
  FOREIGN KEY(customer_id) REFERENCES customers(id), FOREIGN KEY(cashier_id) REFERENCES users(id),

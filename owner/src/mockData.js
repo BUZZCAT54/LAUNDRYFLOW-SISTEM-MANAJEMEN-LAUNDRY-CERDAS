@@ -64,7 +64,6 @@ export function validateCustomer(values,customers,editId){
  if(values.name.trim().length<2)errors.name='Nama minimal 2 karakter.';
  if(!/^08\d{8,11}$/.test(phone))errors.phone='Gunakan nomor WhatsApp Indonesia yang valid (08… atau +62…).';
  else if(customers.some(row=>row.id!==editId&&row.phone===phone))errors.phone='Nomor WhatsApp sudah dipakai pelanggan lain.';
- if(!values.address.trim())errors.address='Alamat wajib diisi.';
  if(values.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))errors.email='Format email belum benar.';
  return {errors,phone};
 }
@@ -80,7 +79,7 @@ export function parseCustomerCsv(text){
  }
  if(quoted)throw new Error('Tanda kutip pada CSV belum ditutup.');
  const headers=rows.shift()?.map(value=>value.toLowerCase())||[];
- if(!['nama','whatsapp','alamat'].every(key=>headers.includes(key)))throw new Error('CSV harus memiliki kolom nama, whatsapp, alamat.');
+ if(!['nama','whatsapp'].every(key=>headers.includes(key)))throw new Error('CSV harus memiliki kolom nama, whatsapp.');
  if(!rows.length)throw new Error('File CSV tidak memiliki data pelanggan.');
  if(rows.length>500)throw new Error('Maksimal 500 pelanggan per impor.');
  return rows.map(values=>Object.fromEntries(headers.map((key,i)=>[key,values[i]||''])));

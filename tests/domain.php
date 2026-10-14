@@ -25,3 +25,7 @@ check(validTransition('Diterima','Diproses'),'Next status allowed');
 check(!validTransition('Diterima','Selesai'),'Skipping status rejected');
 check(normalizePhone('0812 3456 7890') === '6281234567890','Phone normalization');
 rejects(fn()=>normalizePhone('123'),'Invalid WhatsApp rejected');
+
+check(validatePayment('later',999999,25000,false) === ['paid'=>0,'change'=>0], 'Pay later never records received money or change');
+rejects(fn()=>validatePayment('qris',25000,25000,true,false),'Non-cash settlement requires confirmation');
+check(validatePayment('transfer',0,25000,true,true)['paid']===25000,'Confirmed transfer settles exact total');

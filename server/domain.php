@@ -32,6 +32,7 @@ function calculateOrder(array $items, array $services, mixed $discountPercent): 
     return ['items'=>$lines,'subtotal'=>$subtotal,'discount_percent'=>(float)$discountPercent,'discount'=>$discount,'total'=>$subtotal-$discount];
 }
 function validatePayment(string $method, mixed $paid, int $total, bool $configured, bool $confirmed=false): array {
+    if ($method === 'later') return ['paid'=>0,'change'=>0];
     if (!in_array($method,['cash','qris','transfer'],true)) throw new InvalidArgumentException('Metode pembayaran tidak valid.');
     if ($method !== 'cash' && (!$configured || !$confirmed)) throw new InvalidArgumentException('Pembayaran non-tunai belum dikonfigurasi atau belum dikonfirmasi.');
     $paid = $method === 'cash' ? wholeMoney($paid) : $total;

@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {isUnpaid,paymentLabel,collectedTotal} from '../src/payment.js';
+import {aggregateReport} from '../src/reportData.js';
+const pending={method:'later',paid:0,total:25000,created_at:'2026-10-14 08:00:00',status:'Diproses',items:[]};
+assert.equal(isUnpaid(pending),true);
+assert.equal(paymentLabel(pending),'Belum bayar');
+assert.equal(collectedTotal(pending),0);
+const settled={...pending,method:'cash',paid:30000};
+assert.equal(paymentLabel(settled),'Lunas');
+assert.equal(collectedTotal(settled),25000);
+assert.equal(isUnpaid({...pending,method:'cash',paid:1000}),true);
+const report=aggregateReport({orders:[pending,settled],customers:[],services:[]},'2026-10-14','2026-10-14');
+assert.equal(report.count,2);
+assert.equal(report.revenue,25000);
+assert.equal(report.daily[0].revenue,25000);
+assert.equal(new Map(report.methods).get('later'),1);
+console.log('PASS: unpaid labels, settlement, and unpaid exclusion from revenue');

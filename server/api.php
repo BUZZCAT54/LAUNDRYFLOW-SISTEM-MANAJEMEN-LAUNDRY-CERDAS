@@ -136,6 +136,21 @@ try {
         query('INSERT INTO status_history(order_id,status,user_id) VALUES(?,?,?)',[$id,'Diterima',$userId]);
         db()->commit(); reply(['order'=>getOrder($id)],201);
     }
+    if ($method === 'POST' && preg_match('#^/orders/(\d+)/payment$#',$route,$match)) {
+        $id=(int)$match[1];
+        db()->beginTransaction(); $row=query('SELECT * FROM orders WHERE id=? FOR UPDATE',[$id])->fetch();
+        if (!$row) { db()->rollBack(); reply(['error'=>'Pesanan tidak ditemukan.'],404); }
+        if ($row['method']!=='later' && (int)$row['paid'] >= (int)$row['total']) {
+            db()->commit(); reply(['order'=>getOrder($id)]);
+        }
+        $paymentMethod=(string)($body['method'] ?? '');
+        if (!in_array($paymentMethod,['cash','qris','transfer'],true)) throw new InvalidArgumentException('Pilih metode pelunasan yang valid.');
+        $config=settings();
+        $configured=$paymentMethod==='qris' ? (bool)$config['qris_image'] : (bool)($config['bank_name'] && $config['bank_account'] && $config['bank_holder']);
+        $payment=validatePayment($paymentMethod,$body['paid'] ?? 0,(int)$row['total'],$configured,($body['confirmed'] ?? false) === true);
+        query('UPDATE orders SET method=?,paid=?,change_amount=? WHERE id=?',[$paymentMethod,$payment['paid'],$payment['change'],$id]);
+        db()->commit(); reply(['order'=>getOrder($id)]);
+    }
     if ($method === 'POST' && preg_match('#^/orders/(\d+)/status$#',$route,$match)) {
         $id=(int)$match[1]; $status=(string)($body['status'] ?? '');
         db()->beginTransaction(); $row=query('SELECT * FROM orders WHERE id=? FOR UPDATE',[$id])->fetch();
