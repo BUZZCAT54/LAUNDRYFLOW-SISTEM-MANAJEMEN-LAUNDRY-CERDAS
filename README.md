@@ -92,7 +92,9 @@ Untuk mengakses aplikasi dari komputer lain tanpa akun Cloudflare:
 ./scripts/share-tunnel.sh
 ```
 
-Skrip menyalakan MariaDB/MySQL (jika belum jalan), server PHP pada `127.0.0.1:8080`, lalu membuat URL `https://*.trycloudflare.com`. URL dicetak di terminal dan disimpan di `/tmp/syaqil-share/url.txt`. Tekan `Ctrl+C` untuk menghentikan layanan yang dijalankan skrip.
+Skrip menyalakan MariaDB/MySQL (jika belum jalan), server kasir pada `127.0.0.1:8080`, server owner pada `127.0.0.1:8081`, lalu membuat dua URL `https://*.trycloudflare.com`. URL dicetak di terminal dan disimpan di `/tmp/syaqil-share/url.txt` (kasir) serta `/tmp/syaqil-share/owner-url.txt` (owner). Tekan `Ctrl+C` untuk menghentikan layanan yang dijalankan skrip.
+
+Kasir memakai API dan database. Owner adalah prototipe UI dengan data demo, belum terhubung ke API.
 
 Catatan: URL berubah setiap kali tunnel dijalankan ulang, hanya hidup selama komputer dan skrip menyala, dan seluruh halaman dapat diakses publik. Jalankan hanya dengan database demo, bukan data pelanggan asli. Untuk alamat tetap, gunakan Cloudflare Named Tunnel dengan domain sendiri.
 
