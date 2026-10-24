@@ -84,6 +84,18 @@ Untuk pengembangan UI, jalankan API pada port 8080, lalu `npm run dev`. Vite mem
 
 Untuk Apache, arahkan DocumentRoot/virtual host ke folder `public`, aktifkan `mod_rewrite` dan `.htaccess`. `public/index.php` meneruskan request ke router; aset hasil build di `dist` dilayani oleh router. Gunakan root virtual host, bukan subfolder URL. Untuk produksi gunakan HTTPS dan PHP-FPM/Apache, bukan server development `php -S`. File `.env`, database, source `server`, dan `scripts` tidak boleh menjadi document root publik.
 
+### Membagikan lewat Cloudflare Quick Tunnel
+
+Untuk mengakses aplikasi dari komputer lain tanpa akun Cloudflare:
+
+```sh
+./scripts/share-tunnel.sh
+```
+
+Skrip menyalakan MariaDB/MySQL (jika belum jalan), server PHP pada `127.0.0.1:8080`, lalu membuat URL `https://*.trycloudflare.com`. URL dicetak di terminal dan disimpan di `/tmp/syaqil-share/url.txt`. Tekan `Ctrl+C` untuk menghentikan layanan yang dijalankan skrip.
+
+Catatan: URL berubah setiap kali tunnel dijalankan ulang, hanya hidup selama komputer dan skrip menyala, dan seluruh halaman dapat diakses publik. Jalankan hanya dengan database demo, bukan data pelanggan asli. Untuk alamat tetap, gunakan Cloudflare Named Tunnel dengan domain sendiri.
+
 ## Struktur
 
 ```text
