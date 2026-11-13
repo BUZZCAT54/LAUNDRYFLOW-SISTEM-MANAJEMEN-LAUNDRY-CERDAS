@@ -1,7 +1,7 @@
 import React, {useMemo, useState} from 'react';
-import {Users, Crown, Heart, Star, Search, Plus, Download, Upload, MoreVertical, Pencil, Phone, CalendarDays, ReceiptText, ShoppingCart, FileText, Copy, Check, ChevronRight, ArrowRight} from 'lucide-react';
+import {Users, Star, Search, Plus, Download, Upload, MoreVertical, Pencil, Phone, CalendarDays, ReceiptText, ShoppingCart, FileText, Copy, Check, ChevronRight, ArrowRight} from 'lucide-react';
 import {api, rupiah, localPhone, dateText, quantity} from './lib';
-import {Modal, Empty, ErrorBox, PaymentStatus} from './components';
+import {Modal, Empty, ErrorBox} from './components';
 import {CustomerForm} from './Cashier';
 import {ReferenceBanner, StatCard, Pagination} from './ReferenceUI';
 import {exportExcel, initials} from './referenceUtils';
@@ -20,7 +20,7 @@ function summaries(customers, orders) {
 }
 
 function CustomerEditor({customer, onClose, onSaved, focusNotes = false}) {
- const [form, setForm] = useState({name: customer.name, phone: localPhone(customer.phone), address: customer.address || '', notes: customer.notes || ''});
+ const [form, setForm] = useState({name: customer.name, phone: localPhone(customer.phone), notes: customer.notes || ''});
  const [busy, setBusy] = useState(false), [error, setError] = useState('');
  async function save(event) {
   event.preventDefault(); setBusy(true); setError('');
@@ -129,10 +129,11 @@ export default function ReferenceCustomers({data, onCustomer, onSelect, go}) {
  }
  return <div className="ref-customers reference-page">
   <ReferenceBanner variant="customers"/>
-  <div className="ref-customer-heading"><div><h1>Pelanggan</h1><p>Kelola data pelanggan setia Syaqil Laundry</p></div><div className="ref-customer-actions"><button className="secondary" onClick={() => setImporting(true)}><Upload size={17}/> Import Data</button><button className="secondary" disabled={!filtered.length && !checked.size} onClick={exportCustomers}><Download size={17}/> Export Excel</button><button className="primary" onClick={() => setAdd(true)}><Plus size={19}/> Tambah Pelanggan</button></div></div>
+  <div className="ref-customer-heading"><div><h1>Pelanggan</h1><p>Kelola data pelanggan Syaqil Laundry</p></div><div className="ref-customer-actions"><button className="secondary" onClick={() => setImporting(true)}><Upload size={17}/> Import Data</button><button className="secondary" disabled={!filtered.length && !checked.size} onClick={exportCustomers}><Download size={17}/> Export Excel</button><button className="primary" onClick={() => setAdd(true)}><Plus size={19}/> Tambah Pelanggan</button></div></div>
   <div className="ref-customer-metrics">
    <StatCard icon={Users} label="Total Pelanggan" value={customers.length} tone="blue" note="pelanggan terdaftar"/>
    <StatCard icon={Star} label="Pelanggan Baru" value={customers.filter(customer => customer.created_at?.slice(0, 7) === month).length} tone="yellow" note="bulan ini"/>
+   <StatCard icon={ReceiptText} label="Total Transaksi" value={customers.reduce((sum, c) => sum + c.visits, 0)} tone="purple" note="riwayat pesanan"/>
   </div>
   <div className="ref-customer-layout">
    <section className="ref-customer-list" aria-label="Daftar pelanggan">
@@ -140,7 +141,7 @@ export default function ReferenceCustomers({data, onCustomer, onSelect, go}) {
     {checked.size > 0 && <div className="ref-customer-selection"><b>{checked.size} pelanggan dipilih</b><button onClick={exportCustomers}>Export pilihan <Download size={13}/></button><button onClick={() => setChecked(new Set())}>Batal</button></div>}
     <div className="ref-customer-table-wrap"><table className="ref-customer-table"><thead><tr><th><input type="checkbox" aria-label="Pilih semua pelanggan di halaman ini" checked={visible.length > 0 && visible.every(customer => checked.has(customer.id))} onChange={checkPage}/></th><th>No.</th><th>Nama Pelanggan</th><th>No. HP / WhatsApp</th><th>Total Transaksi</th><th>Total Belanja</th><th>Aksi</th></tr></thead><tbody>{visible.map((customer, index) => <tr key={customer.id} className={selected?.id === customer.id ? 'is-selected' : ''}>
      <td><input type="checkbox" aria-label={'Pilih ' + customer.name} checked={checked.has(customer.id)} onChange={() => check(customer.id)}/></td><td>{(currentPage - 1) * PAGE_SIZE + index + 1}</td><td><button className="ref-customer-name" onClick={() => selectCustomer(customer)}><span className={'ref-customer-avatar avatar-tone-' + Number(customer.id) % 6}>{initials(customer.name)}</span><b>{customer.name}</b></button></td><td>{localPhone(customer.phone)}</td><td>{customer.visits}</td><td>{rupiah(customer.spend)}</td><td><button className="ref-customer-more" aria-label={'Detail ' + customer.name} onClick={() => selectCustomer(customer)}><MoreVertical size={17}/></button></td>
-    </tr>)}</tbody></table>{!visible.length && <Empty title="Pelanggan belum ditemukan" description="Coba kata kunci atau filter lain, atau tambahkan pelanggan baru."/>}</div>
+    </tr>)}</tbody></table>{!visible.length && <Empty title="Pelanggan belum ditemukan" description="Coba kata kunci lain, atau tambahkan pelanggan baru."/>}</div>
     <Pagination page={currentPage} total={filtered.length} pageSize={PAGE_SIZE} onPage={setPage}/>
    </section>
    <aside className="ref-customer-detail" aria-label="Detail pelanggan">
@@ -148,7 +149,7 @@ export default function ReferenceCustomers({data, onCustomer, onSelect, go}) {
     {selected ? <><div className="ref-customer-overview"><div className="ref-customer-bio"><div className="ref-customer-identity"><span className="ref-customer-large-avatar">{initials(selected.name)}</span><div><h3>{selected.name}</h3></div></div><div className="ref-customer-contacts"><div><Phone size={16}/><span>{localPhone(selected.phone)}</span><button aria-label="Salin nomor WhatsApp" onClick={copyPhone}>{copied ? <Check size={14}/> : <Copy size={14}/>}</button></div></div></div><div className="ref-customer-summary"><div><span><CalendarDays size={17}/></span><p>Terdaftar Sejak<b>{dateText(selected.created_at)}</b></p></div><div><span><ReceiptText size={17}/></span><p>Total Transaksi<b>{selected.visits} kali</b></p></div><div><span><ShoppingCart size={17}/></span><p>Total Belanja<b>{rupiah(selected.spend)}</b></p></div></div></div>
     <div className="ref-customer-tabs" role="tablist" aria-label="Informasi pelanggan">{tabs.map(label => <button key={label} role="tab" aria-selected={tab === label} aria-controls="customer-tab-panel" className={tab === label ? 'active' : ''} onClick={() => setTab(label)}>{label}</button>)}</div>
     <div id="customer-tab-panel" role="tabpanel" aria-label={tab} className="ref-customer-tab-content">
-     {tab === tabs[0] && (selectedOrders.length ? <div className="ref-customer-history-wrap"><table className="ref-customer-history"><thead><tr><th>No. Nota</th><th>Tanggal</th><th>Layanan</th><th>Berat</th><th>Total</th><th>Status</th></tr></thead><tbody>{selectedOrders.map(order => <tr key={order.id}><td><button onClick={() => onSelect(order)}>{order.number}</button></td><td>{dateText(order.created_at)}</td><td>{[...new Set(order.items.map(item => item.service_name))].join(', ')}</td><td>{quantity(order.items.reduce((total, item) => total + Number(item.quantity), 0))} kg</td><td>{rupiah(order.total)}</td><td><PaymentStatus order={order}/></td></tr>)}</tbody></table></div> : <div className="ref-customer-empty"><ReceiptText size={27}/><b>Belum ada transaksi</b><p>Nota pelanggan akan muncul setelah pembayaran disimpan.</p><button onClick={() => go('kasir')}>Buat transaksi <ArrowRight size={14}/></button></div>)}
+     {tab === tabs[0] && (selectedOrders.length ? <div className="ref-customer-history-wrap"><table className="ref-customer-history"><thead><tr><th>No. Nota</th><th>Tanggal</th><th>Layanan</th><th>Berat</th><th>Total</th><th>Status</th></tr></thead><tbody>{selectedOrders.map(order => <tr key={order.id}><td><button onClick={() => onSelect(order)}>{order.number}</button></td><td>{dateText(order.created_at)}</td><td>{[...new Set(order.items.map(item => item.service_name))].join(', ')}</td><td>{quantity(order.items.reduce((total, item) => total + Number(item.quantity), 0))} kg</td><td>{rupiah(order.total)}</td><td><span className="ref-customer-status active">Lunas</span></td></tr>)}</tbody></table></div> : <div className="ref-customer-empty"><ReceiptText size={27}/><b>Belum ada transaksi</b><p>Nota pelanggan akan muncul setelah pembayaran disimpan.</p><button onClick={() => go('kasir')}>Buat transaksi <ArrowRight size={14}/></button></div>)}
      {tab === tabs[1] && <div className="ref-profile-notes"><h3>Catatan pelanggan</h3><p>{selected.notes || 'Belum ada catatan khusus untuk pelanggan ini.'}</p><button className="text-button" onClick={() => setEdit({customer: selected, focusNotes: true})}><Pencil size={14}/> Edit catatan</button>{selectedOrders.filter(order => order.notes).length > 0 && <><h3>Catatan dari pesanan</h3>{selectedOrders.filter(order => order.notes).slice(0, 5).map(order => <div className="ref-order-note" key={order.id}><button onClick={() => onSelect(order)}>{order.number}<ChevronRight size={13}/></button><p>{order.notes}</p></div>)}</>}</div>}
     </div>
     <div className="ref-customer-note-card"><FileText size={25}/><div><b>Catatan Pelanggan</b><p>{selected.notes || 'Tambahkan preferensi atau perhatian khusus pelanggan.'}</p></div><button aria-label="Edit catatan pelanggan" onClick={() => setEdit({customer: selected, focusNotes: true})}><Pencil size={13}/> Edit</button></div>
@@ -156,7 +157,7 @@ export default function ReferenceCustomers({data, onCustomer, onSelect, go}) {
    </aside>
   </div>
   {feedback && <p className="ref-customer-feedback" role="status">{feedback}</p>}
-  {add && <CustomerForm onClose={() => setAdd(false)} onSaved={customer => {onCustomer(customer); setSelectedId(customer.id); setSearch(''); setPage(1); setAdd(false);}}/>}
+  {add && <CustomerForm onClose={() => setAdd(false)} onSaved={customer => {onCustomer(customer); setSelectedId(customer.id); setSearch(''); setSort('latest'); setPage(1); setAdd(false);}}/>}
   {edit && <CustomerEditor {...edit} onClose={() => setEdit(null)} onSaved={customer => {onCustomer(customer); setSelectedId(customer.id); setEdit(null); setFeedback('Data pelanggan berhasil diperbarui.');}}/>}
   {importing && <ImportCustomers customers={data.customers} onCustomer={onCustomer} onClose={() => setImporting(false)}/>}
  </div>;
