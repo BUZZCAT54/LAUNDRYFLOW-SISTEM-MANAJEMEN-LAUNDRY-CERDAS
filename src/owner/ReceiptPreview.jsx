@@ -21,7 +21,7 @@ export function ReceiptPaper({receipt,settings}){
    <div className="receipt-document-logo">{logo&&<img src={logo} alt=""/>}<b>{storeName.toUpperCase()}</b></div>
    <div className="receipt-document-brand-info">
     <span>{prefs.showAddress!==false&&profile.address?profile.address:'Bersih · Cepat · Praktis'}</span>
-    {prefs.showPhone!==false&&profile.phone&&<small>Telp. {profile.phone}</small>}
+    {prefs.showPhone!==false&&profile.phone&&<small>{`Telp.\u00a0${profile.phone}`}</small>}
    </div>
   </header>
   <div className="receipt-document-heading"><span>NOTA PEMBAYARAN</span><span className="receipt-document-paid"><Check size={12} aria-hidden="true"/>{receipt.payment_status === 'unpaid' ? 'Belum Lunas' : 'Lunas'}</span></div>
