@@ -19,8 +19,10 @@ export function ReceiptPaper({receipt,settings}){
  return <article className="receipt-document" aria-label={`Nota ${receipt.number || ''}`}>
   <header className="receipt-document-brand">
    <div className="receipt-document-logo">{logo&&<img src={logo} alt=""/>}<b>{storeName.toUpperCase()}</b></div>
-   <span>{prefs.showAddress!==false&&profile.address?profile.address:'Bersih · Cepat · Praktis'}</span>
-   {prefs.showPhone!==false&&profile.phone&&<small style={{display:'block',fontSize:'10px'}}>Telp. {profile.phone}</small>}
+   <div className="receipt-document-brand-info">
+    <span>{prefs.showAddress!==false&&profile.address?profile.address:'Bersih · Cepat · Praktis'}</span>
+    {prefs.showPhone!==false&&profile.phone&&<small>Telp. {profile.phone}</small>}
+   </div>
   </header>
   <div className="receipt-document-heading"><span>NOTA PEMBAYARAN</span><span className="receipt-document-paid"><Check size={12} aria-hidden="true"/>{receipt.payment_status === 'unpaid' ? 'Belum Lunas' : 'Lunas'}</span></div>
   <dl className="receipt-document-meta">
