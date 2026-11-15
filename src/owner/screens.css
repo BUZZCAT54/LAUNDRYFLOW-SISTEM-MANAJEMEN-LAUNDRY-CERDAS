@@ -175,4 +175,4 @@ body{background:#6548ff}
 }
 @media(max-width:1099px){.ow-dashboard .ow-dashboard-charts{display:grid;grid-template-columns:1fr}.ow-dashboard .ow-status-panel{grid-column:auto}.ow-dashboard-actions .ow-quick-grid{grid-template-rows:auto}}
 @media(max-width:767px){.ow-focus-list article{min-height:62px}.ow-dashboard-actions .ow-quick-grid{grid-template-rows:auto}.ow-reference-shell .owner-sidebar-note{display:none}}
-@media print{body{background:#fff}#root,.ui-overlay,.owner-toast{display:none!important}#owner-print-area{display:block;width:80mm;margin:0 auto}@page{size:80mm auto;margin:0}}
+@media print{html,body,html:has(.ow-reference-shell),body:has(.ow-reference-shell){height:auto;overflow:visible;background:#fff}#root,.ui-overlay,.owner-toast{display:none!important}#owner-print-area{display:block;width:80mm;margin:0 auto}@page{size:80mm auto;margin:0}}
