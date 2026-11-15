@@ -41,8 +41,8 @@ function Topbar({page,mobile,toggle,navigate,onLogout,currentUser,customers,rece
  const searchRef=useRef(null),rootRef=useRef(null),query=search.trim().toLowerCase();
  const matches=query?[
   ...ITEMS.filter(item=>item[1].toLowerCase().includes(query)).map(([key,label,Icon])=>({key,label,Icon})),
-  ...[['profile','Profil Usaha dan Jam Operasional'],['access','Akun & Akses'],['receipt','Nota & Struk'],['system','Sistem dan Format Tampilan'],['notifications','Notifikasi'],['backup','Backup & Data']].filter(([,label])=>label.toLowerCase().includes(query)).map(([tab,label])=>({key:'pengaturan',label,query:tab,Icon:Settings2})),
-  ...customers.filter(row=>(row.name||'').toLowerCase().includes(query)||(row.phone||'').includes(query)||(row.address||'').toLowerCase().includes(query)).slice(0,3).map(row=>({key:'pelanggan',label:row.name,query:row.name,Icon:UsersRound})),
+  ...[['profile','Profil Usaha dan Jam Operasional'],['payment','Pembayaran Bank & QRIS'],['access','Akun & Akses'],['receipt','Nota & Struk'],['system','Sistem dan Format Tampilan'],['notifications','Notifikasi & WhatsApp Gateway'],['backup','Backup & Data']].filter(([,label])=>label.toLowerCase().includes(query)).map(([tab,label])=>({key:'pengaturan',label,query:tab,Icon:Settings2})),
+  ...customers.filter(row=>(row.name||'').toLowerCase().includes(query)||(row.phone||'').includes(query)||(row.email||'').toLowerCase().includes(query)).slice(0,3).map(row=>({key:'pelanggan',label:row.name,query:row.name,Icon:UsersRound})),
   ...receipts.filter(row=>(row.number||'').toLowerCase().includes(query)||(row.customer||'').toLowerCase().includes(query)).slice(0,2).map(row=>({key:'riwayat-nota',label:row.number,query:row.number,Icon:Receipt})),
   ...employees.filter(row=>[row.name||'',row.username||'',row.role||''].join(' ').toLowerCase().includes(query)).slice(0,2).map(row=>({key:'karyawan',label:row.name+' · '+row.role,query:row.username,Icon:UsersRound})),
   ...services.filter(row=>[row.name||'',row.price||''].join(' ').toLowerCase().includes(query)).slice(0,2).map(row=>({key:'layanan-harga',label:row.name,query:row.name,Icon:Shirt})),
@@ -56,7 +56,7 @@ function Topbar({page,mobile,toggle,navigate,onLogout,currentUser,customers,rece
   return()=>{document.removeEventListener('keydown',key);document.removeEventListener('pointerdown',outside);};
  },[]);
  function choose(match){navigate(match.key,match.query||'');setSearch('');searchRef.current?.blur();}
- const searchHint={pelanggan:'Cari pelanggan, nomor HP, atau alamat...','riwayat-nota':'Cari nomor nota, nama pelanggan, atau menu...',pengeluaran:'Cari pengeluaran, kategori, atau keterangan...',analytics:'Cari menu, layanan, atau karyawan...','laporan-keuangan':'Cari laporan, pelanggan, atau menu...',pengaturan:'Cari pengaturan, profil, atau lainnya...'}[page]||'Cari menu, pelanggan, atau laporan...';
+ const searchHint={pelanggan:'Cari pelanggan, nomor HP, atau email...','riwayat-nota':'Cari nomor nota, nama pelanggan, atau menu...',pengeluaran:'Cari pengeluaran, kategori, atau keterangan...',analytics:'Cari menu, layanan, atau karyawan...','laporan-keuangan':'Cari laporan, pelanggan, atau menu...',pengaturan:'Cari pengaturan, profil, atau lainnya...'}[page]||'Cari menu, pelanggan, atau laporan...';
  const displayName = currentUser?.name || 'Owner';
  const initials = displayName.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
  return <header className="owner-topbar" ref={rootRef}>
@@ -70,7 +70,7 @@ function Topbar({page,mobile,toggle,navigate,onLogout,currentUser,customers,rece
 
 function FuturePlaceholder({page,navigate}){
  const item=ITEMS.find(row=>row[0]===page)||ITEMS[0];
- return <div className="owner-page-inner owner-future"><div className="owner-page-heading"><div><span className="ui-eyebrow">OWNER WORKSPACE</span><h1>{item[1]}</h1><p>Modul ini disiapkan untuk tahap desain berikutnya.</p></div><StatusBadge tone="neutral">Belum tersedia</StatusBadge></div><Card><EmptyState icon={item[2]} title={`${item[1]} belum tersedia di prototipe ini`} description="Gunakan sidebar untuk mencoba halaman operasional, manajemen, dan keuangan yang tersedia." action={<Button onClick={()=>navigate('dashboard')}>Kembali ke Dashboard</Button>}/></Card></div>;
+ return <div className="owner-page-inner owner-future"><div className="owner-page-heading"><div><span className="ui-eyebrow">OWNER WORKSPACE</span><h1>{item[1]}</h1><p>Halaman ini belum diaktifkan.</p></div><StatusBadge tone="neutral">Belum tersedia</StatusBadge></div><Card><EmptyState icon={item[2]} title={`${item[1]} belum tersedia`} description="Gunakan sidebar untuk membuka halaman operasional, manajemen, dan keuangan yang tersedia." action={<Button onClick={()=>navigate('dashboard')}>Kembali ke Dashboard</Button>}/></Card></div>;
 }
 
 import {ownerApi} from './api';
@@ -90,6 +90,14 @@ function mergeBackendSettings(raw) {
  if (raw.business_name || raw.name) base.profile.name = raw.business_name || raw.name;
  if (raw.business_address || raw.address) base.profile.address = raw.business_address || raw.address;
  if (raw.business_phone || raw.phone) base.profile.phone = raw.business_phone || raw.phone;
+ if (raw.bank_name !== undefined) base.payment.bank_name = raw.bank_name || '';
+ if (raw.bank_account !== undefined) base.payment.bank_account = raw.bank_account || '';
+ if (raw.bank_holder !== undefined) base.payment.bank_holder = raw.bank_holder || '';
+ if (raw.qris_image !== undefined) base.payment.qris_image = raw.qris_image || null;
+ if (raw.whatsapp_enabled !== undefined) base.notifications.gatewayEnabled = raw.whatsapp_enabled === '1' || raw.whatsapp_enabled === true;
+ if (raw.whatsapp_gateway_url !== undefined) base.notifications.gatewayUrl = raw.whatsapp_gateway_url || '';
+ if (raw.whatsapp_api_key !== undefined) base.notifications.apiKey = raw.whatsapp_api_key || '';
+ if (raw.whatsapp_sender_number !== undefined) base.notifications.senderNumber = raw.whatsapp_sender_number || '';
  return base;
 }
 
@@ -115,6 +123,7 @@ export default function OwnerApp({ currentUser: propUser, onLogout }){
     if (boot.employees) setEmployees(boot.employees);
     if (boot.corrections) setCorrections(boot.corrections);
     if (boot.accountActivity) setAccountActivity(boot.accountActivity);
+    if (boot.receiptActivities) setActivities(boot.receiptActivities);
     if (boot.settings) {
      setDemoMode(Boolean(boot.settings.demo && boot.settings.demo !== '0' && boot.settings.demo !== 'false'));
      setSettings(mergeBackendSettings(boot.settings));
@@ -196,10 +205,10 @@ export default function OwnerApp({ currentUser: propUser, onLogout }){
  if(loading)content=<LoadingState label="Menyiapkan workspace Owner..." rows={6}/>;
  else if(page==='dashboard')content=<OwnerDashboard navigate={navigate} corrections={corrections} expenses={expenses} receipts={receipts}/>;
  else if(page==='pelanggan')content=<OwnerCustomers customers={customers} setCustomers={setCustomers} receipts={receipts} notify={notify} initialQuery={intent}/>;
- else if(page==='riwayat-nota')content=<OwnerReceipts receipts={receipts} setReceipts={setReceipts} activities={activities} setActivities={setActivities} settings={settings} demo={demoMode} notify={notify} initialQuery={intent}/>;
+ else if(page==='riwayat-nota')content=<OwnerReceipts receipts={receipts} setReceipts={setReceipts} activities={activities} setActivities={setActivities} settings={settings} currentUser={currentUser} demo={demoMode} notify={notify} initialQuery={intent}/>;
  else if(page==='karyawan')content=<OwnerEmployees employees={employees} setEmployees={setEmployees} activity={accountActivity} setActivity={setAccountActivity} notify={notify} initialQuery={intent}/>;
  else if(page==='layanan-harga')content=<OwnerServices services={services} setServices={setServices} history={priceHistory} setHistory={setPriceHistory} notify={notify} initialQuery={intent}/>;
- else if(page==='koreksi-transaksi')content=<OwnerCorrections corrections={corrections} setCorrections={setCorrections} receipts={receipts} notify={notify} initialQuery={intent}/>;
+ else if(page==='koreksi-transaksi')content=<OwnerCorrections corrections={corrections} setCorrections={setCorrections} receipts={receipts} setReceipts={setReceipts} services={services} notify={notify} initialQuery={intent}/>;
  else if(page==='pengeluaran')content=<OwnerExpenses expenses={expenses} setExpenses={setExpenses} notify={notify} initialQuery={intent}/>;
  else if(page==='analytics'||page==='laporan-keuangan')content=<OwnerReports key={page} receipts={receipts} expenses={expenses} customers={customers} services={services} notify={notify} initialTab={page==='analytics'?'analytics':'summary'}/>;
  else if(page==='pengaturan')content=<OwnerSettings settings={settings} setSettings={setSettings} backupAt={backupAt} setBackupAt={setBackupAt} employees={employees} demo={demoMode} navigate={navigate} notify={notify} initialTab={intent||'profile'}/>;

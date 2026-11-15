@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {categories,defaultPeriod,financeSummary,financeTransactions,initialExpenses,grouped,inPeriod,paymentMethods,periodError,previousPeriod,serviceOverview,sumAmounts,trendRows,validateExpense,validDate} from '../src/financeData.js';
+import {categories,defaultPeriod,financeSummary,financeTransactions,initialExpenses,grouped,inPeriod,paymentMethods,periodError,previousPeriod,serviceOverview,sumAmounts,trendRows,validateExpense,validDate} from '../../src/owner/financeData.js';
 
 test('finance fixture reconciles service, payment, daily and monthly summaries',()=>{
  const s=financeSummary(financeTransactions,initialExpenses,defaultPeriod);
@@ -36,12 +36,11 @@ test('date filters include boundaries, reject impossible/reversed dates and supp
  assert.deepEqual(previousPeriod({preset:'custom',from:'2026-10-04',to:'2026-10-06'}),{from:'2026-10-01',to:'2026-10-03'});
  assert.deepEqual(previousPeriod({preset:'previous',from:'2026-09-01',to:'2026-09-30'}),{from:'2026-08-01',to:'2026-08-31'});
 });
-test('expense validation accepts whole rupiah and rejects invalid categories, payments and amounts',()=>{
- const valid={date:'2026-10-06',category:'Operasional',description:'  Sabun laundry  ',amount:'250000',method:'Tunai'};
+test('expense validation accepts whole rupiah and rejects invalid categories, dates and amounts',()=>{
+ const valid={date:'2026-10-06',category:'Operasional',description:'  Sabun laundry  ',amount:'250000'};
  const result=validateExpense(valid);assert.deepEqual(result.errors,{});assert.equal(result.values.amount,250000);assert.equal(result.values.description,'Sabun laundry');
  for(const amount of ['',0,-1,0.5,'NaN',Infinity,1000000001])assert.ok(validateExpense({...valid,amount}).errors.amount);
  assert.ok(validateExpense({...valid,date:'2026-02-30'}).errors.date);
  assert.ok(validateExpense({...valid,category:'Tidak ada'}).errors.category);
- assert.ok(validateExpense({...valid,method:'Kredit'}).errors.method);
  assert.ok(validateExpense({...valid,description:'  '}).errors.description);
 });

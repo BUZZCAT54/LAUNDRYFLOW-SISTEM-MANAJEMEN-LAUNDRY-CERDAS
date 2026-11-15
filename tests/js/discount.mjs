@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {calculateDiscount} from '../src/lib.js';
+import {calculateDiscount} from '../../src/lib.js';
 
 assert.deepEqual(calculateDiscount(78000,'10'),{percent:10,amount:7800,error:''});
 assert.deepEqual(calculateDiscount(25500,'12,5'),{percent:12.5,amount:3188,error:''});

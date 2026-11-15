@@ -80,7 +80,7 @@ export function parseCustomerCsv(text){
  }
  if(quoted)throw new Error('Tanda kutip pada CSV belum ditutup.');
  const headers=rows.shift()?.map(value=>value.toLowerCase())||[];
- if(!['nama','whatsapp','alamat'].every(key=>headers.includes(key)))throw new Error('CSV harus memiliki kolom nama, whatsapp, alamat.');
+ if(!['nama','whatsapp'].every(key=>headers.includes(key)))throw new Error('CSV harus memiliki kolom nama dan whatsapp.');
  if(!rows.length)throw new Error('File CSV tidak memiliki data pelanggan.');
  if(rows.length>500)throw new Error('Maksimal 500 pelanggan per impor.');
  return rows.map(values=>Object.fromEntries(headers.map((key,i)=>[key,values[i]||''])));

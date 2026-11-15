@@ -10,12 +10,16 @@ export async function downloadReceipt(order,settings) {
  };
  const rule=()=>{y+=1;pdf.setDrawColor(160);pdf.line(6,y,74,y);y+=5;};
  const money=(label,value,bold=false)=>{if(y>207){pdf.addPage([80,220]);y=9;}pdf.setFont('helvetica',bold?'bold':'normal');pdf.setFontSize(8);pdf.text(label,6,y);pdf.text(rupiah(value),74,y,{align:'right'});y+=5;};
- line('SYAQIL LAUNDRY',{bold:true,size:13,center:true});line('Bersih • Cepat • Praktis',{center:true});
- if(settings?.address)line(settings.address,{center:true});if(settings?.phone)line(settings.phone,{center:true});
+ const prefs=settings?.receipt_prefs||{};
+ const storeName=(settings?.name||'SYAQIL LAUNDRY').toUpperCase();
+ line(storeName,{bold:true,size:13,center:true});line('Bersih • Cepat • Praktis',{center:true});
+ if(prefs.showAddress!==false&&settings?.address)line(settings.address,{center:true});if(prefs.showPhone!==false&&settings?.phone)line(settings.phone,{center:true});
  if(settings?.demo)line('NOTA DEMO - BUKAN TRANSAKSI NYATA',{size:6,center:true});rule();
- line(order.number,{bold:true});line(dateText(order.created_at,true));line('Pelanggan: '+order.customer_name);if(order.cashier_name)line('Kasir: '+order.cashier_name);rule();
+ line(order.number,{bold:true});line(dateText(order.created_at,true));line('Pelanggan: '+order.customer_name);if(prefs.showCashier!==false&&order.cashier_name)line('Kasir: '+order.cashier_name);rule();
  for(const item of order.items){line(item.category+' / '+item.service_name,{bold:true});line(`${quantity(item.quantity)} ${item.unit} x ${rupiah(item.price)}`);money('Subtotal item',item.subtotal);}
  rule();money('Subtotal',order.subtotal);if(Number(order.discount)>0||Number(order.discount_percent)>0)money(`Diskon (${quantity(order.discount_percent)}%)`,-Number(order.discount||0));money('TOTAL',order.total,true);if(order.payment_status!=='unpaid'&&order.method!=='later'){money(methodName[order.method]||order.method,order.paid);money('Kembalian',order.change_amount);}rule();
- if(order.notes){line('Catatan: '+order.notes);rule();}line(order.payment_status==='unpaid'||order.method==='later'?'BELUM BAYAR (BAYAR NANTI)':'LUNAS',{bold:true,center:true});line('Terima kasih!',{center:true});line('Simpan nota untuk pengambilan cucian.',{size:7,center:true});
+ if(order.notes){line('Catatan: '+order.notes);rule();}line(order.payment_status==='unpaid'||order.method==='later'?'BELUM BAYAR (BAYAR NANTI)':'LUNAS',{bold:true,center:true});
+ const footerLines=(prefs.footer||'Terima kasih!\nSimpan nota untuk pengambilan cucian.').split('\n').filter(Boolean);
+ footerLines.forEach((txt,idx)=>line(txt,{size:idx===0?8:7,center:true}));
  pdf.save(order.number+'.pdf');
 }

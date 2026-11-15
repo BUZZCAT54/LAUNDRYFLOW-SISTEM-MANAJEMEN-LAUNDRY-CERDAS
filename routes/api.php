@@ -33,6 +33,7 @@ Route::middleware(['web'])->group(function () {
             Route::get('/bootstrap', [OrderController::class, 'bootstrap']);
             Route::post('/customers', [CustomerController::class, 'store']);
             Route::post('/customers/{id}', [CustomerController::class, 'update']);
+            Route::delete('/customers/{id}', [CustomerController::class, 'destroy']);
             Route::post('/orders', [OrderController::class, 'store']);
             Route::get('/orders/{id}', [OrderController::class, 'show']);
             Route::post('/orders/{id}/status', [OrderController::class, 'updateStatus']);
@@ -73,6 +74,10 @@ Route::middleware(['web'])->group(function () {
 
             // Koreksi & Pembatalan
             Route::post('/corrections', [OwnerController::class, 'storeCorrection']);
+            Route::post('/corrections/{id}/decide', [OwnerController::class, 'decideCorrection']);
+
+            // Aktivitas Struk (Cetak Ulang / Unduh PDF)
+            Route::post('/receipts/{id}/activity', [OwnerController::class, 'logReceiptActivity']);
 
             // Pengaturan
             Route::post('/settings', [OwnerController::class, 'updateSettings']);

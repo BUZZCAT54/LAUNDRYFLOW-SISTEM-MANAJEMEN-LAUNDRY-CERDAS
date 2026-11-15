@@ -38,4 +38,4 @@ export function Pagination({page,total,size=10,onChange,label='pelanggan'}){
  const pages=Math.max(1,Math.ceil(total/size)),start=Math.max(1,Math.min(page-2,pages-4));
  return <footer className="ow-pagination"><span>{total?`Menampilkan ${(page-1)*size+1}–${Math.min(page*size,total)} dari ${total} ${label}`:`0 ${label}`}</span><nav aria-label={`Halaman ${label}`}><button aria-label="Halaman sebelumnya" disabled={page<=1} onClick={()=>onChange(page-1)}><ChevronLeft size={17}/></button>{Array.from({length:Math.min(5,pages)},(_,i)=>start+i).map(p=><button key={p} aria-label={`Halaman ${p}`} aria-current={p===page?'page':undefined} className={p===page?'is-active':''} onClick={()=>onChange(p)}>{p}</button>)}<button aria-label="Halaman berikutnya" disabled={page>=pages} onClick={()=>onChange(page+1)}><ChevronRight size={17}/></button></nav></footer>;
 }
-export function PrototypeFooter(){return <p className="ow-prototype-note">Prototipe Owner · Data demo · Perubahan hanya berlaku selama sesi ini.</p>;}
+export function PrototypeFooter(){return <p className="ow-prototype-note">Syaqil Laundry · Panel Manajemen Owner</p>;}

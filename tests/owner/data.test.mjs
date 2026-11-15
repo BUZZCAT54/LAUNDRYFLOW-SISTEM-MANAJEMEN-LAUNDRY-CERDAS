@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {initialCustomers,initialReceipts,dashboardPeriods,validateCustomer,parseCustomerCsv} from '../src/mockData.js';
+import {initialCustomers,initialReceipts,dashboardPeriods,validateCustomer,parseCustomerCsv} from '../../src/owner/mockData.js';
 
 test('fixture IDs and receipt numbers remain unique for selection and pagination',()=>{
  assert.equal(new Set(initialCustomers.map(row=>row.id)).size,124);
@@ -17,19 +17,19 @@ test('dashboard status and service distributions account for every transaction',
  }
 });
 test('WhatsApp normalization prevents duplicate 08 and +62 representations',()=>{
- const values={name:'Nama Uji',phone:'+62 852 7712 9011',address:'Padang',email:''};
+ const values={name:'Nama Uji',phone:'+62 852 7712 9011',email:''};
  assert.equal(validateCustomer(values,initialCustomers).errors.phone,'Nomor WhatsApp sudah dipakai pelanggan lain.');
  assert.deepEqual(validateCustomer(values,initialCustomers,1),{errors:{},phone:'085277129011'});
  assert.ok(validateCustomer({...values,phone:'8123',email:'email-salah'},[]).errors.email);
 });
-test('CSV supports quoted commas, escaped quotes, line breaks and BOM',()=>{
- const rows=parseCustomerCsv('\uFEFFnama,whatsapp,alamat\r\n"Dina ""Putri""",081277770099,"Jalan A, Padang\nSumatera Barat"');
+test('CSV supports quoted commas, escaped quotes, line breaks, optional alamat, and BOM',()=>{
+ const rows=parseCustomerCsv('\uFEFFnama,whatsapp,email\r\n"Dina ""Putri""",081277770099,dina@example.com');
  assert.equal(rows[0].nama,'Dina "Putri"');
- assert.equal(rows[0].alamat,'Jalan A, Padang\nSumatera Barat');
- assert.equal(parseCustomerCsv('nama;whatsapp;alamat\nDina;081277770099;Padang')[0].whatsapp,'081277770099');
+ assert.equal(rows[0].email,'dina@example.com');
+ assert.equal(parseCustomerCsv('nama;whatsapp;catatan\nDina;081277770099;VIP')[0].whatsapp,'081277770099');
 });
 test('CSV rejects missing required columns, incomplete quotes and empty imports',()=>{
  assert.throws(()=>parseCustomerCsv('nama,email\nDina,dina@example.com'),/whatsapp/);
- assert.throws(()=>parseCustomerCsv('nama,whatsapp,alamat\n"Dina,0812,Padang'),/kutip/);
- assert.throws(()=>parseCustomerCsv('nama,whatsapp,alamat'),/tidak memiliki data/);
+ assert.throws(()=>parseCustomerCsv('nama,whatsapp\n"Dina,0812'),/kutip/);
+ assert.throws(()=>parseCustomerCsv('nama,whatsapp'),/tidak memiliki data/);
 });

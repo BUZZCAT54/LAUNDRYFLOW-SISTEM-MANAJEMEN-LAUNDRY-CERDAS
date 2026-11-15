@@ -32,45 +32,16 @@ class OwnerController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        $receipts = $orders->map(function (Order $order) {
-            $firstItem = $order->items->first();
-            $totalWeight = (float) $order->items->sum('quantity');
-            return [
-                'id' => (int)$order->id,
-                'number' => $order->number ?: 'SYQ-' . $order->id,
-                'date' => $order->created_at ? $order->created_at->format('Y-m-d') : date('Y-m-d'),
-                'time' => $order->created_at ? $order->created_at->format('H:i') : '00:00',
-                'customer' => $order->customer_name,
-                'phone' => $order->customer_phone,
-                'service' => $firstItem ? $firstItem->service_name : 'Cucian',
-                'employee' => $order->cashier ? $order->cashier->name : 'Kasir',
-                'method' => match ($order->method) {
-                    'cash' => 'Tunai',
-                    'qris' => 'QRIS',
-                    'transfer' => 'Transfer',
-                    'later' => 'Bayar Nanti',
-                    default => ucfirst($order->method),
-                },
-                'amount' => (int)$order->total,
-                'total' => (int)$order->total,
-                'weight' => $totalWeight > 0 ? $totalWeight : 1.0,
-                'subtotal' => (int)$order->subtotal,
-                'paid' => (int)$order->paid,
-                'change_amount' => (int)$order->change_amount,
-                'status' => $order->status,
-                'payment_status' => $order->payment_status ?: 'paid',
-                'notes' => $order->notes,
-                'items' => $order->items->map(fn(OrderItem $i) => [
-                    'id' => $i->id,
-                    'service_name' => $i->service_name,
-                    'unit' => $i->unit,
-                    'price' => (int)$i->price,
-                    'quantity' => (float)$i->quantity,
-                    'category' => $i->category,
-                    'subtotal' => (int)$i->subtotal,
-                ])->values()->all(),
-            ];
-        })->values()->all();
+        $reprintCounts = AccountActivity::whereNotNull('order_id')
+            ->where('type', 'Struk Dicetak Ulang')
+            ->selectRaw('order_id, COUNT(*) as cnt')
+            ->groupBy('order_id')
+            ->pluck('cnt', 'order_id');
+
+        $receipts = $orders->map(fn(Order $order) => $this->formatReceipt(
+            $order,
+            (int)($reprintCounts[$order->id] ?? 0)
+        ))->values()->all();
 
         // 2. Data Pelanggan Lengkap dengan Agregat
         $customers = Customer::withCount('orders as order_count')
@@ -82,7 +53,6 @@ class OwnerController extends Controller
                 'id' => (int)$c->id,
                 'name' => $c->name,
                 'phone' => $c->phone ?: '',
-                'address' => $c->address ?: '',
                 'notes' => $c->notes ?: '',
                 'order_count' => (int)($c->order_count ?? 0),
                 'total_spent' => (int)($c->total_spent ?? 0),
@@ -107,19 +77,7 @@ class OwnerController extends Controller
         ])->values()->all();
 
         // 4. Layanan & Tarif
-        $services = Service::orderBy('id')->get()->map(fn(Service $s) => [
-            'id' => (int)$s->id,
-            'name' => $s->name,
-            'price' => (int)$s->price,
-            'unit' => $s->unit,
-            'duration_hours' => (int)($s->duration_hours ?? 0),
-            'duration' => ($s->duration_hours ?? 0) === 24 ? 'day' : (($s->duration_hours ?? 0) > 0 ? 'hours' : 'normal'),
-            'hours' => (int)($s->duration_hours ?? 0),
-            'active' => (bool)$s->active,
-            'description' => $s->description ?: '',
-            'tone' => $s->tone ?: 'blue',
-            'symbol' => $s->symbol ?: 'shirt',
-        ])->values()->all();
+        $services = Service::orderBy('id')->get()->map(fn(Service $s) => $this->formatService($s))->values()->all();
 
         // 5. Riwayat Perubahan Harga
         $priceHistory = PriceHistory::orderByDesc('date')->orderByDesc('id')->get()->map(fn(PriceHistory $h) => [
@@ -146,22 +104,14 @@ class OwnerController extends Controller
         ])->values()->all();
 
         // 7. Koreksi Transaksi
-        $corrections = OrderCorrection::with(['order', 'user'])->orderByDesc('id')->get()->map(fn(OrderCorrection $c) => [
-            'id' => (int)$c->id,
-            'order_id' => (int)$c->order_id,
-            'number' => $c->order ? $c->order->number : '',
-            'customer' => $c->order ? $c->order->customer_name : '',
-            'phone' => $c->order ? $c->order->customer_phone : '',
-            'date' => $c->created_at ? $c->created_at->format('Y-m-d\TH:i') : '',
-            'type' => $c->type,
-            'reason' => $c->reason,
-            'status' => 'Selesai',
-            'actor' => $c->user ? $c->user->name : 'Owner',
-            'old_values' => $c->old_values,
-            'new_values' => $c->new_values,
-        ])->values()->all();
+        $corrections = OrderCorrection::with(['order.items', 'user'])
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn(OrderCorrection $c) => $this->formatCorrection($c))
+            ->values()
+            ->all();
 
-        // 8. Aktivitas Akun
+        // 8. Aktivitas Akun & Aktivitas Struk
         $accountActivity = AccountActivity::orderByDesc('id')->limit(50)->get()->map(fn(AccountActivity $a) => [
             'id' => (int)$a->id,
             'date' => $a->created_at ? $a->created_at->format('Y-m-d\TH:i') : '',
@@ -169,6 +119,22 @@ class OwnerController extends Controller
             'type' => $a->type,
             'detail' => $a->detail,
         ])->values()->all();
+
+        $receiptActivities = AccountActivity::with('order')
+            ->whereNotNull('order_id')
+            ->orderByDesc('id')
+            ->limit(100)
+            ->get()
+            ->map(fn(AccountActivity $a) => [
+                'id' => (int)$a->id,
+                'order_id' => (int)$a->order_id,
+                'number' => $a->order ? $a->order->number : '',
+                'customer' => $a->order ? $a->order->customer_name : '',
+                'date' => $a->created_at ? $a->created_at->format('Y-m-d\TH:i') : '',
+                'actor' => $a->name,
+                'type' => $a->type,
+                'detail' => $a->detail,
+            ])->values()->all();
 
         // 9. Pengaturan Usaha
         $settings = BusinessSetting::allAsArray();
@@ -188,6 +154,7 @@ class OwnerController extends Controller
             'employees' => $employees,
             'corrections' => $corrections,
             'accountActivity' => $accountActivity,
+            'receiptActivities' => $receiptActivities,
             'settings' => $settings,
             'financialSummary' => [
                 'totalRevenue' => $totalRevenue,
@@ -363,15 +330,19 @@ class OwnerController extends Controller
     public function storeService(Request $request): JsonResponse
     {
         $name = trim((string)$request->input('name', ''));
+        $kind = trim((string)$request->input('kind', 'Pakaian')) ?: 'Pakaian';
         $price = (int)$request->input('price', 0);
         $unit = (string)$request->input('unit', 'kg');
         $hours = (int)$request->input('hours', 0);
         $description = trim((string)$request->input('description', ''));
-        $tone = (string)$request->input('tone', 'blue');
-        $symbol = (string)$request->input('symbol', 'shirt');
+        $tone = trim((string)$request->input('tone', 'blue')) ?: 'blue';
+        $symbol = trim((string)$request->input('symbol', 'shirt')) ?: 'shirt';
 
         if (mb_strlen($name) < 3) {
             return response()->json(['error' => 'Nama layanan minimal 3 karakter.'], 422);
+        }
+        if (mb_strlen($kind) > 40) {
+            return response()->json(['error' => 'Kategori layanan maksimal 40 karakter.'], 422);
         }
         if ($price <= 0 || $price > 10000000) {
             return response()->json(['error' => 'Harga harus berupa rupiah utuh antara 1 dan 10.000.000.'], 422);
@@ -385,6 +356,7 @@ class OwnerController extends Controller
 
         $service = Service::create([
             'name' => $name,
+            'kind' => $kind,
             'price' => $price,
             'unit' => $unit,
             'duration_hours' => $hours > 0 ? $hours : null,
@@ -394,17 +366,7 @@ class OwnerController extends Controller
             'symbol' => $symbol,
         ]);
 
-        return response()->json(['service' => [
-            'id' => (int)$service->id,
-            'name' => $service->name,
-            'price' => (int)$service->price,
-            'unit' => $service->unit,
-            'duration_hours' => (int)($service->duration_hours ?? 0),
-            'active' => (bool)$service->active,
-            'description' => $service->description,
-            'tone' => $service->tone,
-            'symbol' => $service->symbol,
-        ]], 201);
+        return response()->json(['service' => $this->formatService($service)], 201);
     }
 
     /**
@@ -418,16 +380,37 @@ class OwnerController extends Controller
         }
 
         $name = trim((string)$request->input('name', $service->name));
+        $kind = $request->has('kind')
+            ? (trim((string)$request->input('kind', 'Pakaian')) ?: 'Pakaian')
+            : ($service->kind ?: 'Pakaian');
         $price = (int)$request->input('price', $service->price);
         $unit = (string)$request->input('unit', $service->unit);
         $hours = (int)$request->input('hours', $service->duration_hours ?? 0);
+        $description = $request->has('description')
+            ? trim((string)$request->input('description', ''))
+            : ($service->description ?: '');
+        $tone = $request->has('tone')
+            ? (trim((string)$request->input('tone', 'blue')) ?: 'blue')
+            : ($service->tone ?: 'blue');
+        $symbol = $request->has('symbol')
+            ? (trim((string)$request->input('symbol', 'shirt')) ?: 'shirt')
+            : ($service->symbol ?: 'shirt');
         $reason = trim((string)$request->input('reason', 'Penyesuaian tarif'));
 
         if (mb_strlen($name) < 3) {
             return response()->json(['error' => 'Nama layanan minimal 3 karakter.'], 422);
         }
+        if (mb_strlen($kind) > 40) {
+            return response()->json(['error' => 'Kategori layanan maksimal 40 karakter.'], 422);
+        }
         if ($price <= 0 || $price > 10000000) {
             return response()->json(['error' => 'Harga harus antara 1 dan 10.000.000.'], 422);
+        }
+        if (!in_array($unit, ['kg', 'pcs', 'pasang'], true)) {
+            return response()->json(['error' => 'Pilih satuan layanan yang valid (kg, pcs, atau pasang).'], 422);
+        }
+        if (Service::whereRaw('LOWER(name) = ?', [mb_strtolower($name)])->where('id', '<>', $service->id)->exists()) {
+            return response()->json(['error' => 'Nama layanan sudah digunakan.'], 409);
         }
 
         $oldPrice = (int)$service->price;
@@ -435,9 +418,13 @@ class OwnerController extends Controller
 
         $service->update([
             'name' => $name,
+            'kind' => $kind,
             'price' => $price,
             'unit' => $unit,
             'duration_hours' => $hours > 0 ? $hours : null,
+            'description' => $description,
+            'tone' => $tone,
+            'symbol' => $symbol,
         ]);
 
         // Catat ke PriceHistory jika harga berubah
@@ -453,14 +440,7 @@ class OwnerController extends Controller
             ]);
         }
 
-        return response()->json(['service' => [
-            'id' => (int)$service->id,
-            'name' => $service->name,
-            'price' => (int)$service->price,
-            'unit' => $service->unit,
-            'duration_hours' => (int)($service->duration_hours ?? 0),
-            'active' => (bool)$service->active,
-        ]]);
+        return response()->json(['service' => $this->formatService($service)]);
     }
 
     /**
@@ -621,15 +601,55 @@ class OwnerController extends Controller
     public function storeCorrection(Request $request): JsonResponse
     {
         $orderId = (int)$request->input('order_id', 0);
-        $type = (string)$request->input('type', 'Pembatalan');
+        $type = trim((string)$request->input('type', 'Pembatalan'));
         $reason = trim((string)$request->input('reason', ''));
 
-        $order = Order::find($orderId);
+        $order = Order::with('items')->find($orderId);
         if (!$order) {
             return response()->json(['error' => 'Pesanan tidak ditemukan.'], 404);
         }
+        if (!in_array($type, ['Pembatalan', 'Penyesuaian Harga', 'Koreksi Berat', 'Koreksi Layanan'], true)) {
+            return response()->json(['error' => 'Jenis koreksi tidak valid.'], 422);
+        }
         if (mb_strlen($reason) < 3) {
             return response()->json(['error' => 'Alasan koreksi harus diisi minimal 3 karakter.'], 422);
+        }
+
+        $firstItem = $order->items->first();
+        $oldWeight = (float)$order->items->sum('quantity');
+        $oldValues = [
+            'status' => $order->status,
+            'total' => (int)$order->total,
+            'weight' => $oldWeight > 0 ? $oldWeight : 1.0,
+            'price' => (int)($firstItem ? $firstItem->price : 0),
+            'service' => $firstItem ? $firstItem->service_name : '-',
+            'items' => $order->items->toArray(),
+        ];
+
+        $rawNew = $request->input('new_values', null);
+        $newValues = null;
+        if ($type === 'Pembatalan' && !is_array($rawNew)) {
+            $newValues = [
+                'status' => 'Dibatalkan',
+                'total' => 0,
+                'weight' => 0,
+                'price' => 0,
+                'service' => $oldValues['service'],
+            ];
+        } elseif (is_array($rawNew)) {
+            $newTotal = isset($rawNew['total']) ? (int)$rawNew['total'] : $oldValues['total'];
+            $newWeight = isset($rawNew['weight']) ? (float)$rawNew['weight'] : $oldValues['weight'];
+            $newPrice = isset($rawNew['price']) ? (int)$rawNew['price'] : $oldValues['price'];
+            if ($newTotal < 0 || $newWeight < 0 || $newPrice < 0) {
+                return response()->json(['error' => 'Nilai koreksi tidak boleh bernilai negatif.'], 422);
+            }
+            $newValues = [
+                'total' => $newTotal,
+                'weight' => $newWeight,
+                'price' => $newPrice,
+                'service' => trim((string)($rawNew['service'] ?? $oldValues['service'])) ?: $oldValues['service'],
+                'service_id' => isset($rawNew['service_id']) ? (int)$rawNew['service_id'] : ($firstItem ? (int)$firstItem->service_id : null),
+            ];
         }
 
         $correction = OrderCorrection::create([
@@ -637,33 +657,166 @@ class OwnerController extends Controller
             'user_id' => $request->user()->id,
             'type' => $type,
             'reason' => $reason,
-            'old_values' => [
-                'status' => $order->status,
-                'total' => $order->total,
-                'items' => $order->items->toArray(),
-            ],
-            'new_values' => $request->input('new_values', null),
+            'status' => 'Diproses',
+            'old_values' => $oldValues,
+            'new_values' => $newValues,
             'created_at' => now(),
         ]);
 
-        // Jika pembatalan, tandai status order atau catatan
-        if ($type === 'Pembatalan') {
-            $order->update([
-                'notes' => trim($order->notes . " [DIBATALKAN: {$reason}]"),
-            ]);
-        }
+        $correction->load(['order.items', 'user']);
 
-        return response()->json(['correction' => [
-            'id' => (int)$correction->id,
-            'order_id' => (int)$correction->order_id,
-            'type' => $correction->type,
-            'reason' => $correction->reason,
-            'date' => $correction->created_at->format('Y-m-d\TH:i'),
-        ]], 201);
+        return response()->json(['correction' => $this->formatCorrection($correction)], 201);
     }
 
     /**
-     * Perbarui pengaturan profil bisnis, QRIS, dan rekening bank.
+     * Putuskan persetujuan atau penolakan koreksi transaksi secara atomik.
+     */
+    public function decideCorrection(Request $request, int|string $id): JsonResponse
+    {
+        $correction = OrderCorrection::with(['order.items', 'user'])->find((int)$id);
+        if (!$correction) {
+            return response()->json(['error' => 'Data koreksi tidak ditemukan.'], 404);
+        }
+        if (($correction->status ?: 'Selesai') !== 'Diproses') {
+            return response()->json(['error' => 'Koreksi ini sudah diputuskan sebelumnya.'], 409);
+        }
+
+        $action = (string)$request->input('action', '');
+        $note = trim((string)$request->input('note', ''));
+
+        if (!in_array($action, ['approve', 'reject'], true)) {
+            return response()->json(['error' => 'Tindakan keputusan harus approve atau reject.'], 422);
+        }
+        if ($action === 'reject' && mb_strlen($note) < 3) {
+            return response()->json(['error' => 'Alasan penolakan harus diisi minimal 3 karakter.'], 422);
+        }
+
+        $resolvedNote = $note !== '' ? $note : 'Disetujui oleh Owner';
+
+        DB::transaction(function () use ($correction, $action, $resolvedNote, $request) {
+            $correction->update([
+                'status' => $action === 'approve' ? 'Selesai' : 'Ditolak',
+                'decision_note' => $resolvedNote,
+                'decided_at' => now(),
+            ]);
+
+            if ($action === 'approve' && $correction->order) {
+                $order = Order::with('items')->lockForUpdate()->find($correction->order_id);
+                if ($order) {
+                    $new = is_array($correction->new_values) ? $correction->new_values : [];
+                    if ($correction->type === 'Pembatalan') {
+                        $tag = "[DIBATALKAN: {$correction->reason}]";
+                        $order->update([
+                            'subtotal' => 0,
+                            'total' => 0,
+                            'paid' => 0,
+                            'change_amount' => 0,
+                            'payment_status' => 'unpaid',
+                            'notes' => str_contains((string)$order->notes, $tag)
+                                ? $order->notes
+                                : trim(((string)$order->notes) . ' ' . $tag),
+                        ]);
+                    } else {
+                        $finalTotal = max(0, (int)($new['total'] ?? $order->total));
+                        $tag = "[KOREKSI {$correction->type}: {$correction->reason}]";
+                        $order->update([
+                            'subtotal' => $finalTotal + (int)$order->discount_amount,
+                            'total' => $finalTotal,
+                            'change_amount' => max(0, (int)$order->paid - $finalTotal),
+                            'notes' => str_contains((string)$order->notes, $tag)
+                                ? $order->notes
+                                : trim(((string)$order->notes) . ' ' . $tag),
+                        ]);
+                        $firstItem = $order->items->first();
+                        if ($firstItem) {
+                            $firstItem->update([
+                                'service_id' => isset($new['service_id']) && $new['service_id'] ? (int)$new['service_id'] : $firstItem->service_id,
+                                'service_name' => trim((string)($new['service'] ?? $firstItem->service_name)) ?: $firstItem->service_name,
+                                'price' => isset($new['price']) ? max(0, (int)$new['price']) : $firstItem->price,
+                                'quantity' => isset($new['weight']) && (float)$new['weight'] > 0 ? (float)$new['weight'] : $firstItem->quantity,
+                                'subtotal' => $finalTotal,
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            AccountActivity::create([
+                'user_id' => $request->user()->id,
+                'order_id' => $correction->order_id,
+                'name' => $request->user()->name,
+                'type' => $action === 'approve' ? 'Koreksi Disetujui' : 'Koreksi Ditolak',
+                'detail' => ($correction->order ? $correction->order->number : '#' . $correction->order_id) . " ({$correction->type}): {$resolvedNote}",
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+            ]);
+        });
+
+        $correction->refresh()->load(['order.items', 'user']);
+        $receipt = null;
+        if ($correction->order) {
+            $order = Order::with(['items', 'history.user', 'latestNotification', 'cashier'])->find($correction->order_id);
+            if ($order) {
+                $reprints = AccountActivity::where('order_id', $order->id)->where('type', 'Struk Dicetak Ulang')->count();
+                $receipt = $this->formatReceipt($order, $reprints);
+            }
+        }
+
+        return response()->json([
+            'correction' => $this->formatCorrection($correction),
+            'receipt' => $receipt,
+        ]);
+    }
+
+    /**
+     * Catat aktivitas cetak ulang atau unduh PDF struk tanpa mengubah status cucian.
+     */
+    public function logReceiptActivity(Request $request, int|string $id): JsonResponse
+    {
+        $order = Order::find((int)$id);
+        if (!$order) {
+            return response()->json(['error' => 'Nota tidak ditemukan.'], 404);
+        }
+
+        $action = (string)$request->input('action', 'print');
+        if (!in_array($action, ['print', 'download'], true)) {
+            return response()->json(['error' => 'Aksi aktivitas struk tidak valid.'], 422);
+        }
+
+        $type = $action === 'download' ? 'Struk Diunduh PDF' : 'Struk Dicetak Ulang';
+        $prefix = $action === 'download' ? 'Mengunduh PDF nota ' : 'Mencetak ulang nota ';
+
+        $activity = AccountActivity::create([
+            'user_id' => $request->user()->id,
+            'order_id' => $order->id,
+            'name' => $request->user()->name,
+            'type' => $type,
+            'detail' => $prefix . ($order->number ?: 'SYQ-' . $order->id) . ' (' . $order->customer_name . ')',
+            'ip_address' => $request->ip(),
+            'created_at' => now(),
+        ]);
+
+        $reprintCount = AccountActivity::where('order_id', $order->id)
+            ->where('type', 'Struk Dicetak Ulang')
+            ->count();
+
+        return response()->json([
+            'activity' => [
+                'id' => (int)$activity->id,
+                'order_id' => (int)$order->id,
+                'number' => $order->number ?: 'SYQ-' . $order->id,
+                'customer' => $order->customer_name,
+                'date' => $activity->created_at ? $activity->created_at->format('Y-m-d\TH:i') : date('Y-m-d\TH:i'),
+                'actor' => $activity->name,
+                'type' => $activity->type,
+                'detail' => $activity->detail,
+            ],
+            'reprint_count' => (int)$reprintCount,
+        ], 201);
+    }
+
+    /**
+     * Perbarui pengaturan profil bisnis, QRIS, rekening bank, dan gateway WhatsApp.
      */
     public function updateSettings(Request $request): JsonResponse
     {
@@ -672,15 +825,166 @@ class OwnerController extends Controller
             return response()->json(['error' => 'Format pengaturan tidak valid.'], 422);
         }
 
+        if (isset($settings['qris_image']) && $settings['qris_image'] !== '' && $settings['qris_image'] !== null) {
+            $qris = (string)$settings['qris_image'];
+            if (strlen($qris) > 2500000 || !preg_match('/^(data:image\/(png|jpeg|jpg|webp);base64,|https?:\/\/|\/)/i', $qris)) {
+                return response()->json(['error' => 'Gambar QRIS harus berupa PNG/JPG/WebP yang valid (maks. 2 MB).'], 422);
+            }
+        }
+
+        $current = BusinessSetting::allAsArray();
+        $waEnabledVal = array_key_exists('whatsapp_enabled', $settings)
+            ? (filter_var($settings['whatsapp_enabled'], FILTER_VALIDATE_BOOLEAN) || $settings['whatsapp_enabled'] === '1' || $settings['whatsapp_enabled'] === 1 ? '1' : '0')
+            : ($current['whatsapp_enabled'] ?? '0');
+        $waUrlVal = array_key_exists('whatsapp_gateway_url', $settings)
+            ? trim((string)$settings['whatsapp_gateway_url'])
+            : trim((string)($current['whatsapp_gateway_url'] ?? ''));
+
+        if ($waEnabledVal === '1' && (!filter_var($waUrlVal, FILTER_VALIDATE_URL) || !preg_match('/^https?:\/\//i', $waUrlVal))) {
+            return response()->json(['error' => 'URL endpoint WhatsApp Gateway harus diawali http:// atau https:// jika diaktifkan.'], 422);
+        }
+
+        $aliases = [
+            'name' => 'business_name',
+            'business_name' => 'name',
+            'address' => 'business_address',
+            'business_address' => 'address',
+            'phone' => 'business_phone',
+            'business_phone' => 'phone',
+        ];
+
         foreach ($settings as $key => $val) {
-            BusinessSetting::updateOrCreate(
-                ['key' => (string)$key],
-                ['value' => is_scalar($val) ? (string)$val : json_encode($val)]
-            );
+            $keyStr = (string)$key;
+            if ($keyStr === 'whatsapp_enabled') {
+                $stored = $waEnabledVal;
+            } elseif ($val === null) {
+                $stored = '';
+            } elseif (is_bool($val)) {
+                $stored = $val ? '1' : '0';
+            } elseif (is_scalar($val)) {
+                $stored = (string)$val;
+            } else {
+                $stored = json_encode($val);
+            }
+
+            BusinessSetting::updateOrCreate(['key' => $keyStr], ['value' => $stored]);
+            if (isset($aliases[$keyStr])) {
+                BusinessSetting::updateOrCreate(['key' => $aliases[$keyStr]], ['value' => $stored]);
+            }
         }
 
         return response()->json([
             'settings' => BusinessSetting::allAsArray(),
         ]);
+    }
+
+    private function formatReceipt(Order $order, int $reprintCount = 0): array
+    {
+        $firstItem = $order->items->first();
+        $totalWeight = (float)$order->items->sum('quantity');
+
+        return [
+            'id' => (int)$order->id,
+            'number' => $order->number ?: 'SYQ-' . $order->id,
+            'date' => $order->created_at ? $order->created_at->format('Y-m-d') : date('Y-m-d'),
+            'time' => $order->created_at ? $order->created_at->format('H:i') : '00:00',
+            'customer' => $order->customer_name,
+            'phone' => $order->customer_phone,
+            'service' => $firstItem ? $firstItem->service_name : 'Cucian',
+            'employee' => $order->cashier ? $order->cashier->name : 'Kasir',
+            'method' => match ($order->method) {
+                'cash' => 'Tunai',
+                'qris' => 'QRIS',
+                'transfer' => 'Transfer',
+                'later' => 'Bayar Nanti',
+                default => ucfirst($order->method),
+            },
+            'amount' => (int)$order->total,
+            'total' => (int)$order->total,
+            'weight' => $totalWeight > 0 ? $totalWeight : 1.0,
+            'subtotal' => (int)$order->subtotal,
+            'paid' => (int)$order->paid,
+            'change_amount' => (int)$order->change_amount,
+            'status' => $order->status,
+            'payment_status' => $order->payment_status ?: 'paid',
+            'reprint_count' => $reprintCount,
+            'notes' => $order->notes,
+            'items' => $order->items->map(fn(OrderItem $i) => [
+                'id' => $i->id,
+                'service_name' => $i->service_name,
+                'unit' => $i->unit,
+                'price' => (int)$i->price,
+                'quantity' => (float)$i->quantity,
+                'category' => $i->category,
+                'subtotal' => (int)$i->subtotal,
+            ])->values()->all(),
+        ];
+    }
+
+    private function formatService(Service $s): array
+    {
+        $hours = (int)($s->duration_hours ?? 0);
+
+        return [
+            'id' => (int)$s->id,
+            'name' => $s->name,
+            'kind' => $s->kind ?: 'Pakaian',
+            'price' => (int)$s->price,
+            'unit' => $s->unit,
+            'duration_hours' => $hours,
+            'duration' => $hours === 24 ? 'day' : ($hours > 0 ? 'hours' : 'normal'),
+            'hours' => $hours,
+            'active' => (bool)$s->active,
+            'description' => $s->description ?: '',
+            'tone' => $s->tone ?: 'blue',
+            'symbol' => $s->symbol ?: 'shirt',
+        ];
+    }
+
+    private function formatCorrection(OrderCorrection $c): array
+    {
+        $old = is_array($c->old_values) ? $c->old_values : [];
+        $new = is_array($c->new_values) ? $c->new_values : [];
+        $firstOldItem = $old['items'][0] ?? [];
+        $oldWeight = (float)($old['weight'] ?? collect($old['items'] ?? [])->sum('quantity'));
+        $oldPrice = (int)($old['price'] ?? ($firstOldItem['price'] ?? 0));
+        $oldService = (string)($old['service'] ?? ($firstOldItem['service_name'] ?? '-'));
+        $oldTotal = (int)($old['total'] ?? 0);
+
+        $newTotal = array_key_exists('total', $new)
+            ? (int)$new['total']
+            : ($c->type === 'Pembatalan' ? 0 : $oldTotal);
+        $newWeight = array_key_exists('weight', $new) ? (float)$new['weight'] : ($c->type === 'Pembatalan' ? 0.0 : $oldWeight);
+        $newPrice = array_key_exists('price', $new) ? (int)$new['price'] : ($c->type === 'Pembatalan' ? 0 : $oldPrice);
+        $newService = (string)($new['service'] ?? $oldService);
+
+        return [
+            'id' => (int)$c->id,
+            'order_id' => (int)$c->order_id,
+            'number' => $c->order ? $c->order->number : '',
+            'customer' => $c->order ? $c->order->customer_name : '',
+            'phone' => $c->order ? $c->order->customer_phone : '',
+            'date' => $c->created_at ? $c->created_at->format('Y-m-d\TH:i') : '',
+            'type' => $c->type,
+            'reason' => $c->reason,
+            'status' => $c->status ?: 'Selesai',
+            'decisionNote' => $c->decision_note ?: '',
+            'decidedAt' => $c->decided_at ? $c->decided_at->format('Y-m-d\TH:i') : '',
+            'actor' => $c->user ? $c->user->name : 'Owner',
+            'old_values' => $old,
+            'new_values' => $new ?: null,
+            'before' => [
+                'total' => $oldTotal,
+                'weight' => $oldWeight,
+                'price' => $oldPrice,
+                'service' => $oldService,
+            ],
+            'after' => [
+                'total' => $newTotal,
+                'weight' => $newWeight,
+                'price' => $newPrice,
+                'service' => $newService,
+            ],
+        ];
     }
 }

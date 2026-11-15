@@ -15,6 +15,7 @@ class AccountActivity extends Model
 
     protected $fillable = [
         'user_id',
+        'order_id',
         'name',
         'type',
         'detail',
@@ -24,11 +25,17 @@ class AccountActivity extends Model
 
     protected $casts = [
         'user_id' => 'integer',
+        'order_id' => 'integer',
         'created_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class, 'order_id');
     }
 }

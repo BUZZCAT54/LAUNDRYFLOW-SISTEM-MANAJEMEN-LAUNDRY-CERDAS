@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import {isUnpaid,paymentLabel,collectedTotal} from '../src/payment.js';
-import {aggregateReport} from '../src/reportData.js';
+import {isUnpaid,paymentLabel,collectedTotal} from '../../src/payment.js';
+import {aggregateReport} from '../../src/reportData.js';
+
 const pending={method:'later',paid:0,total:25000,created_at:'2026-10-14 08:00:00',status:'Diproses',items:[]};
 assert.equal(isUnpaid(pending),true);
 assert.equal(paymentLabel(pending),'Belum bayar');

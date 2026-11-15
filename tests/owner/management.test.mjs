@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialEmployees,initialServices,initialCorrections,validateEmployee,validateService,decideCorrection,effectiveCorrectionTotal} from '../src/managementData.js';
+import {initialEmployees,initialServices,initialCorrections,validateEmployee,validateService,decideCorrection,effectiveCorrectionTotal} from '../../src/owner/managementData.js';
 
 test('employee usernames are normalized and duplicate identities are rejected',()=>{
  const employee={...initialEmployees[1],username:' DESI ',phone:'+62 821 2345 6789'};

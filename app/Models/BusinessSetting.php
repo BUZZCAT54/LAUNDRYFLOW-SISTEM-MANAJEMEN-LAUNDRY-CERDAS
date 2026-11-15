@@ -31,6 +31,10 @@ class BusinessSetting extends Model
             'bank_account' => '',
             'bank_holder' => '',
             'qris_image' => '',
+            'whatsapp_enabled' => '0',
+            'whatsapp_gateway_url' => '',
+            'whatsapp_api_key' => '',
+            'whatsapp_sender_number' => '',
             'demo' => false,
         ];
 
@@ -43,6 +47,18 @@ class BusinessSetting extends Model
             if ($row->key === 'bank_account') $res['bank_account'] = $row->value ?: '';
             if ($row->key === 'bank_holder') $res['bank_holder'] = $row->value ?: '';
             if ($row->key === 'qris_image') $res['qris_image'] = $row->value ?: '';
+        }
+
+        if (!empty($res['owner_settings_ui']) && is_string($res['owner_settings_ui'])) {
+            $ui = json_decode($res['owner_settings_ui'], true);
+            if (is_array($ui)) {
+                if (!empty($ui['store']['logo'])) {
+                    $res['logo'] = (string)$ui['store']['logo'];
+                }
+                if (!empty($ui['receipt']) && is_array($ui['receipt'])) {
+                    $res['receipt_prefs'] = $ui['receipt'];
+                }
+            }
         }
 
         return $res;

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialSettings,validateSettings,normalizeSettingsPhone,makeSettingsBackup,parseSettingsBackup,settingsDate,settingsTime,previewMessage,MAX_BACKUP_BYTES} from '../src/settingsData.js';
+import {initialSettings,validateSettings,normalizeSettingsPhone,makeSettingsBackup,parseSettingsBackup,settingsDate,settingsTime,previewMessage,MAX_BACKUP_BYTES} from '../../src/owner/settingsData.js';
 
 test('business profile validates required fields and normalizes Indonesian phone numbers',()=>{
  const settings=structuredClone(initialSettings);
@@ -21,11 +21,17 @@ test('opening hours handle closed days and reject reversed, missing, malformed s
  }
 });
 
-test('receipt preferences and message variables are validated and previewed',()=>{
+test('receipt preferences, payment config, whatsapp gateway, and message variables are validated',()=>{
  const settings=structuredClone(initialSettings);settings.profile.name='Laundry Uji';settings.receipt.prefix='TEST';
+ settings.payment={bank_name:'BCA',bank_account:'1234567890',bank_holder:'Desi',qris_image:'data:image/png;base64,aGVsbG8='};
+ settings.notifications={...settings.notifications,channel:'whatsapp',gatewayEnabled:true,gatewayUrl:'https://api.fonnte.com/send',apiKey:'secret',senderNumber:'+62 812-3456-7890'};
+ const ok=validateSettings(settings);assert.deepEqual(ok.errors,{});assert.equal(ok.values.notifications.senderNumber,'081234567890');
  assert.match(previewMessage(settings),/TEST-20261004-0001/);assert.match(previewMessage(settings),/Andi Pratama/);assert.match(previewMessage(settings),/Laundry Uji/);
+
  settings.notifications.template='Halo {password}, pesanan sudah selesai.';settings.receipt.prefix='../bad';settings.receipt.width='200';settings.receipt.footer='';settings.general.decimals='4';
- const {errors}=validateSettings(settings);for(const key of ['template','prefix','width','footer','decimals'])assert.ok(errors[key]);
+ settings.notifications.gatewayUrl='not-a-url';settings.payment.bank_account='';
+ const {errors}=validateSettings(settings);
+ for(const key of ['template','prefix','width','footer','decimals','gatewayUrl','bank_name'])assert.ok(errors[key],`Expected error on ${key}`);
 });
 
 test('settings backups round-trip, exclude unknown properties, and reject invalid files',()=>{
@@ -34,6 +40,8 @@ test('settings backups round-trip, exclude unknown properties, and reject invali
  assert.deepEqual(parseSettingsBackup(JSON.stringify(backup)),{settings,createdAt:'2026-10-09T08:00:00Z'});
  backup.settings.profile.extra='discard';backup.settings.general.extra=true;backup.settings.accounts=[{password:'not imported'}];
  assert.deepEqual(parseSettingsBackup(JSON.stringify(backup)).settings,settings);
+ const legacyBackup={...backup,application:'syaqil-owner-settings-demo'};
+ assert.deepEqual(parseSettingsBackup(JSON.stringify(legacyBackup)).settings,settings);
  for(const raw of ['broken','null','{}',JSON.stringify({...backup,version:99}),JSON.stringify({...backup,settings:{...settings,hours:{}}}),JSON.stringify({...backup,settings:{...settings,hours:Array(7).fill(null)}})])assert.throws(()=>parseSettingsBackup(raw));
  assert.throws(()=>parseSettingsBackup(' '.repeat(MAX_BACKUP_BYTES+1)),/maksimal 3 MB/);
  assert.throws(()=>makeSettingsBackup({...settings,profile:{...settings.profile,name:''}}));
@@ -42,7 +50,6 @@ test('settings backups round-trip, exclude unknown properties, and reject invali
 test('only bounded embedded PNG/JPEG logos and the bundled logo are accepted',()=>{
  for(const logo of [null,'/assets/logo.png','data:image/png;base64,aGVsbG8=','data:image/jpeg;base64,aGVsbG8='])assert.equal(validateSettings({...initialSettings,profile:{...initialSettings.profile,logo}}).errors.logo,undefined);
  for(const logo of ['https://example.org/tracking.png','javascript:alert(1)','data:image/svg+xml;base64,aGVsbG8=','data:image/png;base64,'+'A'.repeat(3000000)])assert.ok(validateSettings({...initialSettings,profile:{...initialSettings.profile,logo}}).errors.logo);
- // The UI additionally decodes images before accepting them; schema validation alone is not an image decoder.
 });
 
 test('receipt samples use selected date, time, and timezone formats',()=>{

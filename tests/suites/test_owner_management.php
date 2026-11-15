@@ -292,5 +292,136 @@ assertTest(
     "Status: {$setRes['status']}"
 );
 
+// TEST 20: Update Atribut Lengkap Layanan (kind, description, tone, symbol)
+$srvFullRes = callApp("/api/owner/services/{$newSrvId}", 'POST', [
+    'name' => 'Cuci Bedcover Jumbo ' . $randCode,
+    'price' => 40000,
+    'unit' => 'pcs',
+    'kind' => 'Bedcover',
+    'description' => 'Bedcover double wash & anti tungau',
+    'tone' => 'teal',
+    'symbol' => 'BC',
+], $ownerCookies);
+$freshSrv = Service::find($newSrvId);
+assertTest(
+    '20. Pembaruan atribut layanan kind/description/tone/symbol tersimpan (HTTP 200)',
+    $srvFullRes['status'] === 200
+        && $freshSrv
+        && $freshSrv->kind === 'Bedcover'
+        && $freshSrv->description === 'Bedcover double wash & anti tungau'
+        && $freshSrv->tone === 'teal'
+        && $freshSrv->symbol === 'BC',
+    "Status: {$srvFullRes['status']}"
+);
+
+// TEST 21: Customer email + Safe DELETE /api/customers/{id} (200 kosong, 409 jika punya order)
+$delCustRes = callApp('/api/customers', 'POST', [
+    'name' => 'Pelanggan Uji Hapus ' . $randCode,
+    'phone' => '0812' . rand(10000000, 99999999),
+    'email' => "uji{$randCode}@example.test",
+], $ownerCookies);
+$delCustId = $delCustRes['json']['customer']['id'] ?? ($delCustRes['json']['id'] ?? 0);
+$custEmailOk = $delCustId > 0 && Customer::find($delCustId)?->email === "uji{$randCode}@example.test";
+$delOkRes = $delCustId > 0 ? callApp("/api/customers/{$delCustId}", 'DELETE', [], $ownerCookies) : ['status' => 0, 'json' => []];
+$orderCustId = Order::whereNotNull('customer_id')->value('customer_id');
+$delConflictRes = $orderCustId ? callApp("/api/customers/{$orderCustId}", 'DELETE', [], $ownerCookies) : ['status' => 409];
+assertTest(
+    '21. Customer email & safe DELETE pelanggan (200 jika 0 order, 409 jika punya transaksi)',
+    $delCustRes['status'] === 201
+        && $custEmailOk
+        && $delOkRes['status'] === 200
+        && (int)($delOkRes['json']['deleted'] ?? 0) === (int)$delCustId
+        && $delConflictRes['status'] === 409,
+    "create={$delCustRes['status']} delOk={$delOkRes['status']} delConflict={$delConflictRes['status']}"
+);
+
+// TEST 22: Alur Koreksi Transaksi (POST correction -> Diproses -> approve & reject decide)
+$corrOrder = Order::first();
+if ($corrOrder) {
+    $corrAppRes = callApp('/api/owner/corrections', 'POST', [
+        'order_id' => $corrOrder->id,
+        'type' => 'Penyesuaian Harga',
+        'reason' => 'Verifikasi approve koreksi owner',
+        'new_values' => ['total' => (int)$corrOrder->total],
+    ], $ownerCookies);
+    $corrAppId = $corrAppRes['json']['correction']['id'] ?? 0;
+    $approveRes = $corrAppId > 0 ? callApp("/api/owner/corrections/{$corrAppId}/decide", 'POST', [
+        'action' => 'approve',
+        'note' => 'Disetujui owner pada test',
+    ], $ownerCookies) : ['status' => 0, 'json' => []];
+
+    $corrRejRes = callApp('/api/owner/corrections', 'POST', [
+        'order_id' => $corrOrder->id,
+        'type' => 'Penyesuaian Harga',
+        'reason' => 'Verifikasi reject koreksi owner',
+    ], $ownerCookies);
+    $corrRejId = $corrRejRes['json']['correction']['id'] ?? 0;
+    $rejectRes = $corrRejId > 0 ? callApp("/api/owner/corrections/{$corrRejId}/decide", 'POST', [
+        'action' => 'reject',
+        'note' => 'Ditolak karena tidak sesuai',
+    ], $ownerCookies) : ['status' => 0, 'json' => []];
+
+    assertTest(
+        '22. Pengajuan koreksi (Diproses) & keputusan approve/reject tersimpan (HTTP 200)',
+        ($corrAppRes['json']['correction']['status'] ?? '') === 'Diproses'
+            && $approveRes['status'] === 200
+            && ($approveRes['json']['correction']['status'] ?? '') === 'Selesai'
+            && !empty($approveRes['json']['receipt'])
+            && $rejectRes['status'] === 200
+            && ($rejectRes['json']['correction']['status'] ?? '') === 'Ditolak',
+        "app={$approveRes['status']}(" . ($approveRes['json']['correction']['status'] ?? '') . ") rej={$rejectRes['status']}(" . ($rejectRes['json']['correction']['status'] ?? '') . ")"
+    );
+} else {
+    assertTest('22. Pengajuan & keputusan koreksi owner (SKIP: belum ada order)', true);
+}
+
+// TEST 23: Aktivitas Cetak/Unduh Struk Tidak Menimpa Status Laundry Order
+if ($corrOrder) {
+    $origStatus = Order::find($corrOrder->id)?->status;
+    $actRes = callApp("/api/owner/receipts/{$corrOrder->id}/activity", 'POST', [
+        'action' => 'print',
+    ], $ownerCookies);
+    $afterStatus = Order::find($corrOrder->id)?->status;
+    assertTest(
+        '23. Log aktivitas cetak struk tersimpan (HTTP 201) tanpa mengubah status order',
+        $actRes['status'] === 201
+            && !empty($actRes['json']['activity']['id'])
+            && isset($actRes['json']['reprint_count'])
+            && $afterStatus === $origStatus,
+        "Status: {$actRes['status']}, orig={$origStatus}, after={$afterStatus}"
+    );
+} else {
+    assertTest('23. Log aktivitas cetak struk (SKIP: belum ada order)', true);
+}
+
+// TEST 24: Pengaturan WhatsApp Gateway & Validasi QRIS Tersimpan
+$prevSet = BusinessSetting::whereIn('key', [
+    'whatsapp_enabled', 'whatsapp_gateway_url', 'whatsapp_api_key', 'whatsapp_sender_number', 'qris_image',
+])->pluck('value', 'key')->all();
+
+$waSetRes = callApp('/api/owner/settings', 'POST', [
+    'settings' => [
+        'whatsapp_enabled' => true,
+        'whatsapp_gateway_url' => 'https://wa-gateway.example.test/send',
+        'whatsapp_api_key' => 'secret-wa-token-123',
+        'whatsapp_sender_number' => '6281234567890',
+        'qris_image' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    ],
+], $ownerCookies);
+$allSet = BusinessSetting::allAsArray();
+assertTest(
+    '24. Pengaturan WhatsApp Gateway & QRIS image tersimpan ke BusinessSetting (HTTP 200)',
+    $waSetRes['status'] === 200
+        && ($allSet['whatsapp_enabled'] ?? '') === '1'
+        && ($allSet['whatsapp_gateway_url'] ?? '') === 'https://wa-gateway.example.test/send'
+        && ($allSet['whatsapp_sender_number'] ?? '') === '6281234567890'
+        && str_starts_with((string)($allSet['qris_image'] ?? ''), 'data:image/png;base64,'),
+    "Status: {$waSetRes['status']}"
+);
+
+foreach (['whatsapp_enabled', 'whatsapp_gateway_url', 'whatsapp_api_key', 'whatsapp_sender_number', 'qris_image'] as $restoreKey) {
+    BusinessSetting::updateOrCreate(['key' => $restoreKey], ['value' => (string)($prevSet[$restoreKey] ?? ($restoreKey === 'whatsapp_enabled' ? '0' : ''))]);
+}
+
 echo "\nRingkasan Modul 4: {$passed} PASS, {$failed} FAIL\n";
 exit($failed > 0 ? 1 : 0);

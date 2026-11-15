@@ -22,9 +22,17 @@ class CustomerController extends Controller
     public function store(Request $request): JsonResponse
     {
         $name = trim((string)$request->input('name', ''));
+        $email = trim((string)$request->input('email', ''));
+        $notes = trim((string)$request->input('notes', ''));
 
         if (mb_strlen($name) < 2 || mb_strlen($name) > 100) {
             return response()->json(['error' => 'Nama harus berisi 2–100 karakter.'], 422);
+        }
+        if ($email !== '' && (mb_strlen($email) > 160 || !filter_var($email, FILTER_VALIDATE_EMAIL))) {
+            return response()->json(['error' => 'Format email tidak valid.'], 422);
+        }
+        if (mb_strlen($notes) > 1000) {
+            return response()->json(['error' => 'Catatan maksimal 1.000 karakter.'], 422);
         }
 
         try {
@@ -40,11 +48,13 @@ class CustomerController extends Controller
         $customer = Customer::create([
             'name' => $name,
             'phone' => $phone,
-            'notes' => '',
+            'email' => $email !== '' ? $email : null,
+            'notes' => $notes,
             'created_at' => now(),
         ]);
 
         $customerData = $customer->toArray();
+        $customerData['email'] = $customer->email ?: '';
         $customerData['order_count'] = 0;
         $customerData['last_order'] = null;
 
@@ -62,10 +72,16 @@ class CustomerController extends Controller
         }
 
         $name = trim((string)$request->input('name', ''));
+        $email = $request->has('email')
+            ? trim((string)$request->input('email', ''))
+            : (string)($customer->email ?? '');
         $notes = trim((string)$request->input('notes', ''));
 
         if (mb_strlen($name) < 2 || mb_strlen($name) > 100) {
             return response()->json(['error' => 'Nama harus berisi 2–100 karakter.'], 422);
+        }
+        if ($email !== '' && (mb_strlen($email) > 160 || !filter_var($email, FILTER_VALIDATE_EMAIL))) {
+            return response()->json(['error' => 'Format email tidak valid.'], 422);
         }
         if (mb_strlen($notes) > 1000) {
             return response()->json(['error' => 'Catatan maksimal 1.000 karakter.'], 422);
@@ -84,6 +100,7 @@ class CustomerController extends Controller
         $customer->update([
             'name' => $name,
             'phone' => $phone,
+            'email' => $email !== '' ? $email : null,
             'notes' => $notes,
         ]);
 
@@ -91,9 +108,32 @@ class CustomerController extends Controller
         $lastOrder = Order::where('customer_id', $customer->id)->max('created_at');
 
         $customerData = $customer->toArray();
+        $customerData['email'] = $customer->email ?: '';
         $customerData['order_count'] = $orderCount;
         $customerData['last_order'] = $lastOrder;
 
         return response()->json(['customer' => $customerData]);
+    }
+
+    /**
+     * Hapus data pelanggan bila belum memiliki riwayat transaksi.
+     */
+    public function destroy(int|string $id): JsonResponse
+    {
+        $customer = Customer::find((int)$id);
+        if (!$customer) {
+            return response()->json(['error' => 'Pelanggan tidak ditemukan.'], 404);
+        }
+
+        if (Order::where('customer_id', $customer->id)->exists()) {
+            return response()->json([
+                'error' => 'Pelanggan sudah memiliki riwayat transaksi sehingga tidak dapat dihapus.',
+            ], 409);
+        }
+
+        $deletedId = (int)$customer->id;
+        $customer->delete();
+
+        return response()->json(['deleted' => $deletedId]);
     }
 }

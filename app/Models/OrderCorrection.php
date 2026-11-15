@@ -18,6 +18,9 @@ class OrderCorrection extends Model
         'user_id',
         'type',
         'reason',
+        'status',
+        'decision_note',
+        'decided_at',
         'old_values',
         'new_values',
         'created_at',
@@ -26,6 +29,7 @@ class OrderCorrection extends Model
     protected $casts = [
         'order_id' => 'integer',
         'user_id' => 'integer',
+        'decided_at' => 'datetime',
         'old_values' => 'array',
         'new_values' => 'array',
         'created_at' => 'datetime',
