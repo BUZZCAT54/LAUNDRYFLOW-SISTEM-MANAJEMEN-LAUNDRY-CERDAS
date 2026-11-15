@@ -10,14 +10,14 @@ export function calculateDiscount(subtotal,value) {
 export const localPhone = p => String(p||'').replace(/^62/,'0');
 export const dateText = (d,withTime=false) => d ? new Date(d.replace(' ','T')).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',...(withTime?{hour:'2-digit',minute:'2-digit'}:{})}) : 'Belum ditentukan';
 const API_BASE = (import.meta.env?.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
-export async function api(path,body,{timeout=15000}={}) {
+export async function api(path,body,{timeout=15000,method}={}) {
  const controller=new AbortController();
  const timer=setTimeout(()=>controller.abort(),timeout);
  try {
   const url=path.startsWith('http')?path:API_BASE+path;
   const res=await fetch(url,{
    signal:controller.signal,
-   method:body===undefined?'GET':'POST',
+   method:method||(body===undefined?'GET':'POST'),
    credentials:'include',
    headers:{
     'Accept':'application/json',

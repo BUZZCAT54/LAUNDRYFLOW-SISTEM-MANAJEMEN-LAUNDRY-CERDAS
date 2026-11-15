@@ -92,6 +92,7 @@ export function validateExpense(values){
  const errors={},amount=Number(values.amount),description=values.description.trim();
  if(!validDate(values.date))errors.date='Pilih tanggal pengeluaran yang valid.';
  if(!categories.includes(values.category))errors.category='Pilih kategori pengeluaran.';
+ if(!paymentMethods.includes(values.method))errors.method='Pilih metode pembayaran yang valid.';
  if(description.length<3)errors.description='Deskripsi minimal 3 karakter.';
  if(!Number.isSafeInteger(amount)||amount<=0||amount>1000000000)errors.amount='Jumlah harus berupa rupiah utuh antara 1 dan 1.000.000.000.';
  return {errors,values:{...values,description,amount}};

@@ -2,7 +2,7 @@ import React,{useState} from 'react';
 import {ChevronDown} from 'lucide-react';
 import {Avatar} from './OwnerComponents';
 import {money} from './mockData';
-import {financeSummary,financeTransactions,grouped,serviceOverview,trendRows} from './financeData';
+import {financeSummary,grouped,serviceOverview,trendRows} from './financeData';
 import {BarChart,DonutChart,FinancePanel,RevenueBars,Segments,SimpleTable} from './FinanceComponents';
 
 function Heatmap({rows}){
@@ -10,10 +10,10 @@ function Heatmap({rows}){
  return <div className="fn-heatmap"><div className="fn-heatmap-grid">{days.map((day,d)=><React.Fragment key={day}><span>{day}</span>{hours.map((hour,h)=><button key={hour} aria-label={`${day}, ${hour}:00: ${cells[d][h]} transaksi`} title={`${day}, ${hour}:00 · ${cells[d][h]} transaksi`} style={{background:cells[d][h]?`rgba(0,95,255,${.15+cells[d][h]/max*.85})`:'#edf4fe'}}/>)}</React.Fragment>)}<span/>{hours.map(h=><span key={h}>{h%2===0?String(h).padStart(2,'0'):''}</span>)}</div><div className="fn-heatmap-key"><i/> Rendah <span/>{[.2,.4,.65,1].map(o=><i key={o} style={{background:`rgba(0,95,255,${o})`}}/>)} Tinggi</div></div>;
 }
 
-export default function OwnerAnalytics({expenses,period}){
+export default function OwnerAnalytics({transactions=[],expenses,period}){
  const [mode,setMode]=useState('day'),[serviceOrder,setServiceOrder]=useState('revenue');
- const summary=financeSummary(financeTransactions,expenses,period);
- const trend=trendRows(mode==='month'?financeTransactions.filter(r=>r.date>=period.from.slice(0,4)+'-01-01'&&r.date<=period.to):summary.rows,mode);
+ const summary=financeSummary(transactions,expenses,period);
+ const trend=trendRows(mode==='month'?transactions.filter(r=>r.date>=period.from.slice(0,4)+'-01-01'&&r.date<=period.to):summary.rows,mode);
  const services=serviceOverview(summary.services).sort((a,b)=>serviceOrder==='revenue'?b.total-a.total:a.label.localeCompare(b.label));
  const topCustomers=grouped(summary.rows,'customer').sort((a,b)=>b.count-a.count||b.total-a.total).slice(0,5);
  return <div className="fn-analytics-content">

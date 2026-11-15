@@ -4,29 +4,37 @@ import {Button,Drawer,Input,Modal,Select} from './ui';
 import {Pagination,SearchField} from './OwnerComponents';
 import {useDetailDrawer} from './ManagementUI';
 import {dateLabel,money} from './mockData';
-import {categories,defaultPeriod,FINANCE_TODAY,grouped,growth,inPeriod,paymentMethods,percent,previousPeriod,shortMoney,sumAmounts,trendRows,validateExpense} from './financeData';
+import {categories,grouped,growth,inPeriod,paymentMethods,percent,previousPeriod,shortMoney,sumAmounts,trendRows,validateExpense} from './financeData';
 import {BarChart,DonutChart,FinanceHeading,FinanceMetric,FinancePanel,PeriodControl,SimpleTable} from './FinanceComponents';
 import {exportExcel} from '../../src/referenceUtils';
+import {ownerApi} from './api';
 
-const blank=()=>({date:FINANCE_TODAY,category:'',description:'',amount:''});
+const currentPeriod=()=>{const now=new Date(),y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0'),last=new Date(y,now.getMonth()+1,0).getDate();return {preset:'month',from:`${y}-${m}-01`,to:`${y}-${m}-${String(last).padStart(2,'0')}`};};
+const blank=()=>({date:new Date().toISOString().slice(0,10),category:'',description:'',amount:''});
 const options=values=>values.map(value=>({value,label:value}));
 export default function OwnerExpenses({expenses,setExpenses,notify,initialQuery=''}){
- const [period,setPeriod]=useState(defaultPeriod),[query,setQuery]=useState(initialQuery),[category,setCategory]=useState(''),[page,setPage]=useState(1),[year,setYear]=useState('2026'),[selected,setSelected]=useState([]);
- const [draft,setDraft]=useState(blank),[editing,setEditing]=useState(null),[errors,setErrors]=useState({}),[showForm,setShowForm]=useState(true),[menu,setMenu]=useState(null),[deleting,setDeleting]=useState(null);
+ const [period,setPeriod]=useState(currentPeriod),[query,setQuery]=useState(initialQuery),[category,setCategory]=useState(''),[page,setPage]=useState(1),[year,setYear]=useState(()=>new Date().toISOString().slice(0,4)),[selected,setSelected]=useState([]);
+ const [draft,setDraft]=useState(blank),[editing,setEditing]=useState(null),[errors,setErrors]=useState({}),[busy,setBusy]=useState(false),[showForm,setShowForm]=useState(true),[menu,setMenu]=useState(null),[deleting,setDeleting]=useState(null);
  const drawer=useDetailDrawer(),formRef=useRef(null);
  useEffect(()=>{setQuery(initialQuery);setPage(1);setSelected([]);},[initialQuery]);
  const costs=expenses.filter(r=>inPeriod(r,period)),total=sumAmounts(costs),prior=sumAmounts(expenses.filter(r=>inPeriod(r,previousPeriod(period)))),groups=grouped(costs,'category',categories);
- const filtered=costs.filter(r=>(!category||r.category===category)&&[r.description,r.category,r.actor].join(' ').toLowerCase().includes(query.trim().toLowerCase())).sort((a,b)=>b.date.localeCompare(a.date)||a.id-b.id);
+ const filtered=costs.filter(r=>(!category||r.category===category)&&[r.description,r.category,r.actor].join(' ').toLowerCase().includes(query.trim().toLowerCase())).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
  const maxPages=Math.max(1,Math.ceil(filtered.length/6)),current=Math.min(page,maxPages),visible=filtered.slice((current-1)*6,current*6),exportRows=selected.length?filtered.filter(r=>selected.includes(r.id)):filtered;
  function filter(change){change();setPage(1);setSelected([]);}
  function openForm(row){setDraft(row?{...row,amount:String(row.amount)}:blank());setEditing(row?.id??null);setErrors({});setShowForm(true);drawer.setOpen(true);setMenu(null);if(!drawer.small)requestAnimationFrame(()=>formRef.current?.querySelector('input')?.focus());}
  function update(key,value){setDraft(d=>({...d,[key]:value}));setErrors(e=>({...e,[key]:''}));}
- function save(e){e.preventDefault();const result=validateExpense(draft);setErrors(result.errors);if(Object.keys(result.errors).length)return;
-  const row={...result.values,id:editing??Math.max(0,...expenses.map(r=>r.id))+1,actor:'Desi Gusrianita'};
-  setExpenses(rows=>editing?rows.map(r=>r.id===editing?row:r):[row,...rows]);setDraft(blank());setEditing(null);drawer.setOpen(false);setSelected([]);setPage(1);notify(`${editing?'Perubahan':'Pengeluaran'} tersimpan di data demo.${inPeriod(row,period)?'':' Tanggalnya di luar periode yang sedang ditampilkan.'}`);
+ async function save(e){e.preventDefault();if(busy)return;const result=validateExpense(draft);setErrors(result.errors);if(Object.keys(result.errors).length)return;
+  setBusy(true);
+  try{
+   const res=await ownerApi(editing?`/owner/expenses/${editing}`:'/owner/expenses',result.values);
+   const row=res.expense;
+   setExpenses(rows=>editing?rows.map(r=>r.id===editing?row:r):[row,...rows]);
+   setDraft(blank());setEditing(null);drawer.setOpen(false);setSelected([]);setPage(1);
+   notify(`${editing?'Perubahan':'Pengeluaran'} tersimpan ke database.${inPeriod(row,period)?'':' Tanggalnya di luar periode yang sedang ditampilkan.'}`);
+  }catch(err){notify(err.message||'Gagal menyimpan pengeluaran.');}finally{setBusy(false);}
  }
- function download(){exportExcel('Pengeluaran-Owner-Demo.xlsx',['Tanggal','Kategori','Deskripsi','Jumlah (Rp)','Dibuat Oleh'],exportRows.map(r=>[r.date,r.category,r.description,r.amount,r.actor]));notify(`${exportRows.length} pengeluaran diekspor.`);}
- const form=<form ref={formRef} onSubmit={save} noValidate className="fn-expense-form"><Input label="Tanggal" type="date" icon={CalendarDays} value={draft.date} onChange={e=>update('date',e.target.value)} error={errors.date}/><Select label="Kategori" value={draft.category} onChange={e=>update('category',e.target.value)} options={[{value:'',label:'Pilih kategori'},...options(categories)]} error={errors.category}/><Input label="Deskripsi" value={draft.description} placeholder="Masukkan deskripsi pengeluaran..." maxLength={160} onChange={e=>update('description',e.target.value)} error={errors.description}/><Input label="Jumlah (Rp)" inputMode="numeric" type="number" min="1" max="1000000000" step="1" placeholder="Rp 0" value={draft.amount} onChange={e=>update('amount',e.target.value)} error={errors.amount}/><Button type="submit">{editing?'Simpan Perubahan':'Simpan Pengeluaran'}</Button>{editing&&<Button type="button" variant="ghost" onClick={()=>openForm(null)}>Batal Mengedit</Button>}</form>;
+ function download(){exportExcel('Pengeluaran-Owner.xlsx',['Tanggal','Kategori','Deskripsi','Jumlah (Rp)','Dibuat Oleh'],exportRows.map(r=>[r.date,r.category,r.description,r.amount,r.actor]));notify(`${exportRows.length} pengeluaran diekspor.`);}
+ const form=<form ref={formRef} onSubmit={save} noValidate className="fn-expense-form"><Input label="Tanggal" type="date" icon={CalendarDays} value={draft.date} onChange={e=>update('date',e.target.value)} error={errors.date}/><Select label="Kategori" value={draft.category} onChange={e=>update('category',e.target.value)} options={[{value:'',label:'Pilih kategori'},...options(categories)]} error={errors.category}/><Input label="Deskripsi" value={draft.description} placeholder="Masukkan deskripsi pengeluaran..." maxLength={160} onChange={e=>update('description',e.target.value)} error={errors.description}/><Input label="Jumlah (Rp)" inputMode="numeric" type="number" min="1" max="1000000000" step="1" placeholder="Rp 0" value={draft.amount} onChange={e=>update('amount',e.target.value)} error={errors.amount}/><Button type="submit" loading={busy}>{editing?'Simpan Perubahan':'Simpan Pengeluaran'}</Button>{editing&&<Button type="button" variant="ghost" onClick={()=>openForm(null)}>Batal Mengedit</Button>}</form>;
  const columns=[
   {key:'select',label:<input type="checkbox" aria-label="Pilih semua pengeluaran di halaman ini" checked={visible.length>0&&visible.every(r=>selected.includes(r.id))} onChange={e=>setSelected(ids=>e.target.checked?[...new Set([...ids,...visible.map(r=>r.id)])]:ids.filter(id=>!visible.some(r=>r.id===id)))}/>,render:r=><input type="checkbox" aria-label={`Pilih ${r.description}`} checked={selected.includes(r.id)} onChange={e=>setSelected(ids=>e.target.checked?[...ids,r.id]:ids.filter(id=>id!==r.id))}/>},
   {key:'no',label:'No.',render:(_,i)=>(current-1)*6+i+1},{key:'date',label:'Tanggal',render:r=>dateLabel(r.date)},
@@ -41,7 +49,7 @@ export default function OwnerExpenses({expenses,setExpenses,notify,initialQuery=
  {!drawer.small&&showForm&&<FinancePanel className="fn-expense-editor" title={<><Wallet size={18}/>{editing?'Edit Pengeluaran':'Tambah Pengeluaran'}</>} action={<button className="fn-icon-button" aria-label="Tutup form pengeluaran" onClick={()=>setShowForm(false)}><X size={17}/></button>}>{form}</FinancePanel>}</div>
  <Drawer open={drawer.small&&drawer.open} onClose={()=>drawer.setOpen(false)} title={editing?'Edit Pengeluaran':'Tambah Pengeluaran'}>{form}</Drawer>
  <Modal open={!!menu} onClose={()=>setMenu(null)} title="Detail Pengeluaran" footer={<><Button variant="danger" icon={Trash2} onClick={()=>{setDeleting(menu);setMenu(null);}}>Hapus</Button><Button icon={Pencil} onClick={()=>openForm(menu)}>Edit Pengeluaran</Button></>}>{menu&&<dl className="fn-detail-list">{[['Tanggal',dateLabel(menu.date)],['Kategori',menu.category],['Deskripsi',menu.description],['Jumlah',money(menu.amount)],['Dibuat oleh',menu.actor]].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}</Modal>
- <Modal open={!!deleting} onClose={()=>setDeleting(null)} title="Hapus pengeluaran?" description={deleting?`${deleting.description} — ${money(deleting.amount)} akan dihapus dari data demo dan perhitungan laporan.`:''} footer={<><Button variant="secondary" onClick={()=>setDeleting(null)}>Batal</Button><Button variant="danger" onClick={()=>{setExpenses(rows=>rows.filter(r=>r.id!==deleting.id));setSelected(ids=>ids.filter(id=>id!==deleting.id));if(editing===deleting.id){setDraft(blank());setEditing(null);}setDeleting(null);notify('Pengeluaran demo dihapus. Laporan sudah diperbarui.');}}>Hapus Pengeluaran</Button></>}/>
+ <Modal open={!!deleting} onClose={()=>setDeleting(null)} title="Hapus pengeluaran?" description={deleting?`${deleting.description} — ${money(deleting.amount)} akan dihapus dari database dan perhitungan laporan.`:''} footer={<><Button variant="secondary" onClick={()=>setDeleting(null)}>Batal</Button><Button variant="danger" loading={busy} onClick={async()=>{setBusy(true);try{await ownerApi(`/owner/expenses/${deleting.id}`,undefined,{method:'DELETE'});setExpenses(rows=>rows.filter(r=>r.id!==deleting.id));setSelected(ids=>ids.filter(id=>id!==deleting.id));if(editing===deleting.id){setDraft(blank());setEditing(null);}setDeleting(null);notify('Pengeluaran dihapus. Laporan sudah diperbarui.');}catch(err){notify(err.message||'Gagal menghapus pengeluaran.');}finally{setBusy(false);}}}>Hapus Pengeluaran</Button></>}/>
  </div>;
 
 }

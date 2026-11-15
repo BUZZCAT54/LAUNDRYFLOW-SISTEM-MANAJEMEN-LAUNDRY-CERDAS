@@ -73,10 +73,10 @@ class OwnerController extends Controller
         })->values()->all();
 
         // 2. Data Pelanggan Lengkap dengan Agregat
-        $customers = Customer::leftJoin('orders', 'customers.id', '=', 'orders.customer_id')
-            ->selectRaw('customers.*, COUNT(orders.id) AS order_count, COALESCE(SUM(orders.total), 0) AS total_spent, MAX(orders.created_at) AS last_order')
-            ->groupBy('customers.id')
-            ->orderBy('customers.name')
+        $customers = Customer::withCount('orders as order_count')
+            ->withSum('orders as total_spent', 'total')
+            ->withMax('orders as last_order', 'created_at')
+            ->orderBy('name')
             ->get()
             ->map(fn($c) => [
                 'id' => (int)$c->id,
@@ -84,13 +84,13 @@ class OwnerController extends Controller
                 'phone' => $c->phone ?: '',
                 'address' => $c->address ?: '',
                 'notes' => $c->notes ?: '',
-                'order_count' => (int)$c->order_count,
-                'total_spent' => (int)$c->total_spent,
+                'order_count' => (int)($c->order_count ?? 0),
+                'total_spent' => (int)($c->total_spent ?? 0),
                 'last_order' => $c->last_order ?: '',
-                'transactions' => (int)$c->order_count,
-                'spent' => (int)$c->total_spent,
+                'transactions' => (int)($c->order_count ?? 0),
+                'spent' => (int)($c->total_spent ?? 0),
                 'last' => $c->last_order ? (is_string($c->last_order) ? substr($c->last_order, 0, 10) : $c->last_order->format('Y-m-d')) : '',
-                'category' => ((int)$c->order_count >= 10 || (int)$c->total_spent >= 300000) ? 'Member' : 'Reguler',
+                'category' => ((int)($c->order_count ?? 0) >= 10 || (int)($c->total_spent ?? 0) >= 300000) ? 'Member' : 'Reguler',
                 'joined' => $c->created_at ? $c->created_at->format('Y-m-d') : date('Y-m-d'),
                 'email' => $c->email ?: '',
             ])
@@ -151,9 +151,11 @@ class OwnerController extends Controller
             'order_id' => (int)$c->order_id,
             'number' => $c->order ? $c->order->number : '',
             'customer' => $c->order ? $c->order->customer_name : '',
+            'phone' => $c->order ? $c->order->customer_phone : '',
             'date' => $c->created_at ? $c->created_at->format('Y-m-d\TH:i') : '',
             'type' => $c->type,
             'reason' => $c->reason,
+            'status' => 'Selesai',
             'actor' => $c->user ? $c->user->name : 'Owner',
             'old_values' => $c->old_values,
             'new_values' => $c->new_values,
@@ -172,7 +174,8 @@ class OwnerController extends Controller
         $settings = BusinessSetting::allAsArray();
 
         // 10. Ringkasan Keuangan Otoritatif
-        $totalRevenue = (int)$orders->sum('total');
+        $collectedOrders = $orders->filter(fn(Order $o) => $o->method !== 'later' && ($o->payment_status ?: 'paid') !== 'unpaid');
+        $totalRevenue = (int)$collectedOrders->sum('total');
         $totalExpenses = (int)Expense::sum('amount');
         $netProfit = $totalRevenue - $totalExpenses;
 
@@ -312,7 +315,8 @@ class OwnerController extends Controller
             ->whereBetween('created_at', [$fromDt, $toDt])
             ->get();
 
-        $revenue = (int)$orders->sum('total');
+        $collectedOrders = $orders->filter(fn(Order $o) => $o->method !== 'later' && ($o->payment_status ?: 'paid') !== 'unpaid');
+        $revenue = (int)$collectedOrders->sum('total');
         $orderCount = $orders->count();
 
         // 2. Pengeluaran dalam periode
@@ -322,9 +326,9 @@ class OwnerController extends Controller
 
         // 3. Rincian metode pembayaran
         $paymentMethods = [
-            'Tunai' => (int)$orders->where('method', 'cash')->sum('total'),
-            'QRIS' => (int)$orders->where('method', 'qris')->sum('total'),
-            'Transfer' => (int)$orders->where('method', 'transfer')->sum('total'),
+            'Tunai' => (int)$collectedOrders->where('method', 'cash')->sum('total'),
+            'QRIS' => (int)$collectedOrders->where('method', 'qris')->sum('total'),
+            'Transfer' => (int)$collectedOrders->where('method', 'transfer')->sum('total'),
         ];
 
         // 4. Rincian kategori pengeluaran

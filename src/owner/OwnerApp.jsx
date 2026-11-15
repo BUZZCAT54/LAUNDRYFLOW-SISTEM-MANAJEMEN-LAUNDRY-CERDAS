@@ -75,14 +75,32 @@ function FuturePlaceholder({page,navigate}){
 
 import {ownerApi} from './api';
 
+function mergeBackendSettings(raw) {
+ const base = structuredClone(initialSettings);
+ if (!raw || typeof raw !== 'object') return base;
+ if (raw.owner_settings_ui) {
+  try {
+   const saved = typeof raw.owner_settings_ui === 'string' ? JSON.parse(raw.owner_settings_ui) : raw.owner_settings_ui;
+   for (const key of Object.keys(base)) {
+    if (key === 'hours' && Array.isArray(saved?.hours) && saved.hours.length === 7) base.hours = saved.hours;
+    else if (saved?.[key] && typeof saved[key] === 'object') Object.assign(base[key], saved[key]);
+   }
+  } catch {}
+ }
+ if (raw.business_name || raw.name) base.profile.name = raw.business_name || raw.name;
+ if (raw.business_address || raw.address) base.profile.address = raw.business_address || raw.address;
+ if (raw.business_phone || raw.phone) base.profile.phone = raw.business_phone || raw.phone;
+ return base;
+}
+
 export default function OwnerApp({ currentUser: propUser, onLogout }){
  const [signedIn,setSignedIn]=useState(!!propUser);
  const [currentUser,setCurrentUser]=useState(propUser || null);
  const [page,setPage]=useState(currentPage),[compact,setCompact]=useState(()=>innerWidth<1200),[mobile,setMobile]=useState(()=>innerWidth<768),[mobileOpen,setMobileOpen]=useState(false);
- const [customers,setCustomers]=useState(initialCustomers),[receipts,setReceipts]=useState(initialReceipts),[activities,setActivities]=useState(initialActivities),[intent,setIntent]=useState(''),[toast,setToast]=useState(''),[loading,setLoading]=useState(true);
- const [employees,setEmployees]=useState(initialEmployees),[accountActivity,setAccountActivity]=useState(initialAccountActivity),[services,setServices]=useState(initialServices),[priceHistory,setPriceHistory]=useState(initialPriceHistory),[corrections,setCorrections]=useState(initialCorrections);
- const [expenses,setExpenses]=useState(initialExpenses);
- const [settings,setSettings]=useState(()=>structuredClone(initialSettings)),[backupAt,setBackupAt]=useState(null);
+ const [customers,setCustomers]=useState([]),[receipts,setReceipts]=useState([]),[activities,setActivities]=useState([]),[intent,setIntent]=useState(''),[toast,setToast]=useState(''),[loading,setLoading]=useState(true);
+ const [employees,setEmployees]=useState([]),[accountActivity,setAccountActivity]=useState([]),[services,setServices]=useState([]),[priceHistory,setPriceHistory]=useState([]),[corrections,setCorrections]=useState([]);
+ const [expenses,setExpenses]=useState([]);
+ const [settings,setSettings]=useState(()=>structuredClone(initialSettings)),[demoMode,setDemoMode]=useState(false),[backupAt,setBackupAt]=useState(null);
  const lastWidth=useRef(innerWidth),toastTimer=useRef(null);
 
  const loadOwnerData = async () => {
@@ -97,10 +115,14 @@ export default function OwnerApp({ currentUser: propUser, onLogout }){
     if (boot.employees) setEmployees(boot.employees);
     if (boot.corrections) setCorrections(boot.corrections);
     if (boot.accountActivity) setAccountActivity(boot.accountActivity);
-    if (boot.settings) setSettings(boot.settings);
+    if (boot.settings) {
+     setDemoMode(Boolean(boot.settings.demo && boot.settings.demo !== '0' && boot.settings.demo !== 'false'));
+     setSettings(mergeBackendSettings(boot.settings));
+    }
    }
   } catch (e) {
    console.error('Gagal memuat data owner:', e);
+   notify(e.message || 'Gagal memuat data workspace Owner.');
   }
  };
 
@@ -174,13 +196,13 @@ export default function OwnerApp({ currentUser: propUser, onLogout }){
  if(loading)content=<LoadingState label="Menyiapkan workspace Owner..." rows={6}/>;
  else if(page==='dashboard')content=<OwnerDashboard navigate={navigate} corrections={corrections} expenses={expenses} receipts={receipts}/>;
  else if(page==='pelanggan')content=<OwnerCustomers customers={customers} setCustomers={setCustomers} receipts={receipts} notify={notify} initialQuery={intent}/>;
- else if(page==='riwayat-nota')content=<OwnerReceipts receipts={receipts} setReceipts={setReceipts} activities={activities} setActivities={setActivities} notify={notify} initialQuery={intent}/>;
+ else if(page==='riwayat-nota')content=<OwnerReceipts receipts={receipts} setReceipts={setReceipts} activities={activities} setActivities={setActivities} settings={settings} demo={demoMode} notify={notify} initialQuery={intent}/>;
  else if(page==='karyawan')content=<OwnerEmployees employees={employees} setEmployees={setEmployees} activity={accountActivity} setActivity={setAccountActivity} notify={notify} initialQuery={intent}/>;
  else if(page==='layanan-harga')content=<OwnerServices services={services} setServices={setServices} history={priceHistory} setHistory={setPriceHistory} notify={notify} initialQuery={intent}/>;
- else if(page==='koreksi-transaksi')content=<OwnerCorrections corrections={corrections} setCorrections={setCorrections} notify={notify} initialQuery={intent}/>;
+ else if(page==='koreksi-transaksi')content=<OwnerCorrections corrections={corrections} setCorrections={setCorrections} receipts={receipts} notify={notify} initialQuery={intent}/>;
  else if(page==='pengeluaran')content=<OwnerExpenses expenses={expenses} setExpenses={setExpenses} notify={notify} initialQuery={intent}/>;
- else if(page==='analytics'||page==='laporan-keuangan')content=<OwnerReports key={page} expenses={expenses} customers={customers} notify={notify} initialTab={page==='analytics'?'analytics':'summary'}/>;
- else if(page==='pengaturan')content=<OwnerSettings settings={settings} setSettings={setSettings} backupAt={backupAt} setBackupAt={setBackupAt} employees={employees} navigate={navigate} notify={notify} initialTab={intent||'profile'}/>;
+ else if(page==='analytics'||page==='laporan-keuangan')content=<OwnerReports key={page} receipts={receipts} expenses={expenses} customers={customers} services={services} notify={notify} initialTab={page==='analytics'?'analytics':'summary'}/>;
+ else if(page==='pengaturan')content=<OwnerSettings settings={settings} setSettings={setSettings} backupAt={backupAt} setBackupAt={setBackupAt} employees={employees} demo={demoMode} navigate={navigate} notify={notify} initialTab={intent||'profile'}/>;
  else content=<FuturePlaceholder page={page} navigate={navigate}/>;
  return <div className={`owner-app ow-reference-shell ${compact?'is-compact':''}`}><Sidebar page={page} compact={compact} mobile={mobile} open={mobileOpen} navigate={navigate} close={()=>setMobileOpen(false)} toggle={toggle}/><div className="owner-main" inert={mobile&&mobileOpen}><Topbar page={page} mobile={mobile} toggle={toggle} navigate={navigate} onLogout={logout} currentUser={currentUser} customers={customers} receipts={receipts} employees={employees} services={services} corrections={corrections} expenses={expenses}/><main className="owner-content" id="owner-main-content">{content}</main></div>{toast&&<div className="owner-toast" role="status"><Check size={18}/><span>{toast}</span><button onClick={()=>setToast('')} aria-label="Tutup pemberitahuan"><X size={17}/></button></div>}</div>;
 }

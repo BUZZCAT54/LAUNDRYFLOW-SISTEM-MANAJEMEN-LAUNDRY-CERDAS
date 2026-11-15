@@ -29,10 +29,9 @@ class OrderController extends Controller
      */
     public function bootstrap(): JsonResponse
     {
-        $customers = Customer::leftJoin('orders', 'customers.id', '=', 'orders.customer_id')
-            ->selectRaw('customers.*, COUNT(orders.id) AS order_count, MAX(orders.created_at) AS last_order')
-            ->groupBy('customers.id')
-            ->orderBy('customers.name')
+        $customers = Customer::withCount('orders as order_count')
+            ->withMax('orders as last_order', 'created_at')
+            ->orderBy('name')
             ->get();
 
         $orders = Order::with(['items', 'history.user', 'latestNotification', 'cashier'])
