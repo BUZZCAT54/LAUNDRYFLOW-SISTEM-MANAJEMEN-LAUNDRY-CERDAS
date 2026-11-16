@@ -7,7 +7,7 @@ import {aggregateReport,offsetDay,previousRange,growth,daysBetween} from './repo
 import './reports.css';
 
 const label=date=>new Date(date+'T00:00:00Z').toLocaleDateString('id-ID',{day:'numeric',month:'short',timeZone:'UTC'});
-const colors=['#2372ff','#9b4dff','#ff503e','#ffcf4c'];
+const colors=['#2372ff','#9b4dff','#ff503e','#ffcf4c','#8791a5'];
 const statusColors=['#59ce68','#ffda49','#2875ff','#b53cff','#ff5440'];
 const columns=['No. Nota','Tanggal & Jam','Pelanggan','Layanan','Berat (kg)','Subtotal','Total','Metode Pembayaran','Status Pembayaran','Status Pesanan'];
 function exportRows(orders){return orders.map(o=>[o.number,o.created_at,o.customer_name,[...new Set(o.items.map(i=>i.service_name))].join(', '),o.items.filter(i=>i.unit==='kg').reduce((s,i)=>s+Number(i.quantity),0),Number(o.subtotal),Number(o.total),methodName[o.method]||o.method,o.payment_status==='unpaid'||o.method==='later'?'Belum Bayar':'Lunas',o.status]);}
@@ -34,7 +34,7 @@ export function ReferenceReports({data}){
  const today=jakartaDate();const initial={from:offsetDay(today,-6),to:today,period:'week',comparison:'none',type:'all'};
  const[draft,setDraft]=useState(initial),[filter,setFilter]=useState(initial),[chartWindow,setChartWindow]=useState('7'),[page,setPage]=useState(1),[error,setError]=useState('');
  const report=aggregateReport(data,filter.from,filter.to);const range=previousRange(filter.from,filter.to,filter.comparison);const previous=range?aggregateReport(data,range.from,range.to):null;
- const methodParts=report.methods.map(([key,value],i)=>({name:methodName[key]||'Lainnya',value,color:colors[i]}));
+ const methodParts=report.methods.map(([key,value],i)=>({name:methodName[key]||'Lainnya',value,color:colors[i]||'#8791a5'}));
  const statusParts=report.statuses.map(([name,value],i)=>({name,value,color:statusColors[i]||'#8791a5'}));
  const visible=key=>filter.type==='all'||filter.type===key;
  const pageCount=Math.max(1,Math.ceil(report.daily.length/7));const currentPage=Math.min(page,pageCount);const daily=[...report.daily].reverse().slice((currentPage-1)*7,currentPage*7);
