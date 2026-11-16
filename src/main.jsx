@@ -24,6 +24,7 @@ import './owner/management.css';
 import './owner/finance.css';
 import './owner/settings.css';
 import './owner/receipt-preview.css';
+import './chart-motion.css';
 
 import App from './App.jsx';
 
