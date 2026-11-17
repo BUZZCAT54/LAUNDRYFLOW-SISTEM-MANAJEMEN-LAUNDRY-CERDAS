@@ -56,10 +56,29 @@ export default function OwnerDashboard({navigate,corrections=[],expenses=[],rece
   return {date,transactions:dayOrders.length,revenue:dayOrders.reduce((s,r)=>s+collectedAmount(r),0),expense:dayCosts.reduce((s,r)=>s+Number(r.amount||0),0)};
  });
  const renderDailyTable=rows=><div className="ow-table-scroll"><table className="ow-table ow-daily-table"><thead><tr>{['Tanggal','Transaksi','Pendapatan','Pengeluaran','Laba Bersih'].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{[...rows].reverse().map((day,i)=><tr key={day.date} className={i===0?'is-selected':''}><td>{dateLabel(day.date)}</td><td>{day.transactions}</td><td>{money(day.revenue)}</td><td>{money(day.expense)}</td><td>{money(day.revenue-day.expense)}</td></tr>)}</tbody></table></div>;
- return <div className="ow-page ow-dashboard"><PageBanner kind="dashboard" title="Dashboard Owner" description="Pantau kondisi usaha Syaqil Laundry dalam satu tampilan."/><div className="ow-metrics-context"><span>Ringkasan usaha <b>· Live Database</b></span><select aria-label="Periode ringkasan usaha" value={period} onChange={e=>setPeriod(e.target.value)}><option value="month">Bulan ini</option><option value="week">7 hari terakhir</option><option value="today">Hari ini</option></select></div><div className="ow-metrics"><Metric label="Total Pendapatan" value={money(stats.revenue)} icon={HandCoins} trend={trend(stats.revenue,stats.previous.revenue)} caption="dari periode sebelumnya"/><Metric label="Total Transaksi" value={stats.transactions} icon={ClipboardList} tone="green" trend={trend(stats.transactions,stats.previous.transactions)} caption="dari periode sebelumnya"/><Metric label={period==='month'?'Pengeluaran Bulan Ini':'Total Pengeluaran'} value={money(stats.expense)} icon={Wallet} tone="orange" trend={trend(stats.expense,stats.previous.expense)} caption="dari periode sebelumnya"/><Metric label="Laba Bersih" value={money(profit)} icon={ChartNoAxesColumnIncreasing} tone="purple" trend={trend(profit,previousProfit)} caption="dari periode sebelumnya"/></div><div className="ow-dashboard-charts"><OperationalFocus corrections={corrections} expenses={expenses} receipts={receipts} navigate={navigate}/><OrderStatus values={stats.status} total={stats.transactions}/></div><div className="ow-dashboard-bottom"><Panel title="Ringkasan Harian" icon={CalendarDays} className="ow-daily-panel" action={<button className="ow-text-link" onClick={()=>setDailyOpen(true)}>Lihat Semua <ArrowRight size={15}/></button>}>{renderDailyTable(days.slice(-5))}</Panel><div className="ow-dashboard-actions"><Panel title="Aksi Cepat" icon={Zap}><div className="ow-quick-grid">{[
+ return <div className="ow-page ow-dashboard">
+  <PageBanner kind="dashboard" title="Dashboard Owner" description="Pantau kondisi usaha Syaqil Laundry dalam satu tampilan."/>
+  <div className="ow-metrics-context"><span>Ringkasan usaha <b>· Live Database</b></span><select aria-label="Periode ringkasan usaha" value={period} onChange={e=>setPeriod(e.target.value)}><option value="month">Bulan ini</option><option value="week">7 hari terakhir</option><option value="today">Hari ini</option></select></div>
+  <div className="ow-metrics">
+   <Metric label="Total Pendapatan" value={money(stats.revenue)} icon={HandCoins} trend={trend(stats.revenue,stats.previous.revenue)} caption="dari periode sebelumnya"/>
+   <Metric label="Total Transaksi" value={stats.transactions} icon={ClipboardList} tone="green" trend={trend(stats.transactions,stats.previous.transactions)} caption="dari periode sebelumnya"/>
+   <Metric label={period==='month'?'Pengeluaran Bulan Ini':'Total Pengeluaran'} value={money(stats.expense)} icon={Wallet} tone="orange" trend={trend(stats.expense,stats.previous.expense)} caption="dari periode sebelumnya"/>
+   <Metric label="Laba Bersih" value={money(profit)} icon={ChartNoAxesColumnIncreasing} tone="purple" trend={trend(profit,previousProfit)} caption="dari periode sebelumnya"/>
+  </div>
+  <div className="ow-dashboard-charts">
+   <div className="ow-dashboard-actions"><Panel title="Aksi Cepat" icon={Zap}><div className="ow-quick-grid">{[
   ['Kelola Pelanggan','Lihat dan kelola data pelanggan','pelanggan',UsersRound,'blue'],
   ['Kelola Layanan','Atur layanan dan harga','layanan-harga',Shirt,'green'],
   ['Tambah Pengeluaran','Catat pengeluaran usaha','pengeluaran',WalletCards,'orange'],
   ['Lihat Laporan','Analisis performa usaha','laporan-keuangan',FileText,'purple']
- ].map(([title,description,key,Icon,tone])=><button className={`ow-quick-action ow-tone-${tone}`} key={key} onClick={()=>navigate(key)}><span className="ow-quick-icon"><Icon size={27}/></span><span><b>{title}</b><small>{description}</small></span><ChevronRight size={19}/></button>)}</div></Panel></div></div><PrototypeFooter/><Modal open={dailyOpen} onClose={()=>setDailyOpen(false)} title="Ringkasan harian usaha" description="Rekap transaksi, pendapatan, pengeluaran, dan laba harian." footer={<Button variant="secondary" onClick={()=>setDailyOpen(false)}>Tutup</Button>}>{renderDailyTable(days)}</Modal></div>;
+   ].map(([title,description,key,Icon,tone])=><button className={`ow-quick-action ow-tone-${tone}`} key={key} onClick={()=>navigate(key)}><span className="ow-quick-icon"><Icon size={27}/></span><span><b>{title}</b><small>{description}</small></span><ChevronRight size={19}/></button>)}</div></Panel></div>
+   <OrderStatus values={stats.status} total={stats.transactions}/>
+  </div>
+  <div className="ow-dashboard-bottom">
+   <Panel title="Ringkasan Harian" icon={CalendarDays} className="ow-daily-panel" action={<button className="ow-text-link" onClick={()=>setDailyOpen(true)}>Lihat Semua <ArrowRight size={15}/></button>}>{renderDailyTable(days.slice(-5))}</Panel>
+   <OperationalFocus corrections={corrections} expenses={expenses} receipts={receipts} navigate={navigate}/>
+  </div>
+  <PrototypeFooter/>
+  <Modal open={dailyOpen} onClose={()=>setDailyOpen(false)} title="Ringkasan harian usaha" description="Rekap transaksi, pendapatan, pengeluaran, dan laba harian." footer={<Button variant="secondary" onClick={()=>setDailyOpen(false)}>Tutup</Button>}>{renderDailyTable(days)}</Modal>
+ </div>;
 }
