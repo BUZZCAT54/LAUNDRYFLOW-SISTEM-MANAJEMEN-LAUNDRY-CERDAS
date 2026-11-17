@@ -439,22 +439,140 @@
             letter-spacing: 0.05em;
         }
 
+        #thermal-print-area {
+            display: none;
+        }
+
         @media print {
+            @page {
+                size: 80mm auto;
+                margin: 4mm;
+            }
             body {
                 background: #ffffff;
                 padding: 0;
+                min-width: 0;
             }
             .receipt-container {
-                box-shadow: none;
-                border: none;
-                max-width: 100%;
-            }
-            .actions-group,
-            .btn {
                 display: none !important;
             }
-            .status-tracker-card {
-                box-shadow: none;
+            #thermal-print-area {
+                display: block !important;
+                width: 80mm;
+                margin: 0 auto;
+                padding: 4mm;
+                box-sizing: border-box;
+                background: #ffffff;
+                color: #111111;
+            }
+            #thermal-print-area .receipt {
+                width: 72mm;
+                max-width: 72mm;
+                margin: 0 auto;
+                background: #ffffff;
+                padding: 0;
+                color: #151515;
+                font-family: 'Courier New', monospace;
+                font-size: 10px;
+                text-align: center;
+                break-inside: avoid;
+                print-color-adjust: exact;
+            }
+            #thermal-print-area .receipt-brand {
+                display: flex;
+                gap: 5px;
+                align-items: center;
+                justify-content: center;
+                font-family: Inter, Arial, sans-serif;
+                font-size: 20px;
+                text-align: left;
+                line-height: 1;
+                letter-spacing: -0.8px;
+                margin: 2px 0 13px;
+            }
+            #thermal-print-area .receipt-brand img {
+                width: 44px;
+                height: 44px;
+                filter: grayscale(1);
+                object-fit: cover;
+            }
+            #thermal-print-area .receipt-title {
+                font-size: 11px;
+                letter-spacing: 0.8px;
+                display: block;
+            }
+            #thermal-print-area .receipt p {
+                font-size: 9px;
+                line-height: 1.6;
+                margin: 7px 0 0;
+            }
+            #thermal-print-area .receipt-rule {
+                border-top: 1px dashed #c0c0c0;
+                margin: 12px 0;
+            }
+            #thermal-print-area .receipt-meta {
+                display: grid;
+                grid-template-columns: 68px 1fr;
+                text-align: left;
+                gap: 5px 3px;
+                font-size: 9px;
+                line-height: 1.5;
+            }
+            #thermal-print-area .receipt-meta > strong {
+                font-size: 9px;
+            }
+            #thermal-print-area .receipt-line {
+                display: flex;
+                justify-content: space-between;
+                gap: 10px;
+                text-align: left;
+                margin: 10px 0;
+            }
+            #thermal-print-area .receipt-line > span {
+                white-space: nowrap;
+                font-size: 9px;
+            }
+            #thermal-print-area .receipt-line b {
+                font-size: 10px;
+                display: block;
+            }
+            #thermal-print-area .receipt-line small {
+                display: block;
+                font-size: 8px;
+                margin-top: 4px;
+                line-height: 1.5;
+            }
+            #thermal-print-area .receipt-sum,
+            #thermal-print-area .receipt-total {
+                display: flex;
+                justify-content: space-between;
+                text-align: left;
+                gap: 12px;
+                font-size: 9px;
+                margin: 8px 0;
+            }
+            #thermal-print-area .receipt-total {
+                font-size: 14px;
+                margin: 12px 0;
+            }
+            #thermal-print-area .paid-stamp {
+                color: #000000;
+                display: inline-flex;
+                gap: 4px;
+                align-items: center;
+                border: 1px solid #000000;
+                padding: 4px 8px;
+                margin-top: 9px;
+                font-weight: 700;
+                letter-spacing: 1px;
+                font-size: 10px;
+            }
+            #thermal-print-area .receipt-notes {
+                text-align: left;
+                font-size: 9px;
+            }
+            #thermal-print-area .receipt-smile {
+                margin-top: 12px;
             }
         }
     </style>
@@ -599,6 +717,88 @@
                     Tautan Nota Terverifikasi Resmi
                 </div>
             </footer>
+        </div>
+    </div>
+
+    @php
+        $prefs = $settings['receipt_prefs'] ?? [];
+        $showLogo = ($prefs['showLogo'] ?? true) !== false;
+        $showAddress = ($prefs['showAddress'] ?? true) !== false;
+        $showPhone = ($prefs['showPhone'] ?? true) !== false;
+        $showCashier = ($prefs['showCashier'] ?? true) !== false;
+        $footerRaw = $prefs['footer'] ?? "Terima kasih!\nSimpan nota untuk pengambilan cucian.";
+        $footerLines = array_values(array_filter(explode("\n", $footerRaw)));
+        $methodLabels = ['cash' => 'Tunai', 'qris' => 'QRIS', 'transfer' => 'Transfer', 'later' => 'Bayar Nanti'];
+        $methodLabel = $methodLabels[$order->method] ?? strtoupper((string)$order->method);
+        $thermalStoreName = $store['name'] ?? 'Syaqil Laundry';
+        $thermalLogo = $settings['logo'] ?? '/assets/logo.png';
+    @endphp
+    <div id="thermal-print-area" aria-hidden="true">
+        <div class="receipt">
+            <div class="receipt-brand">
+                @if($showLogo)<img src="{{ $thermalLogo }}" alt="">@endif
+                <b>{{ $thermalStoreName }}</b>
+            </div>
+            <b class="receipt-title">{{ strtoupper($thermalStoreName) }}</b>
+            <p>Bersih • Cepat • Praktis</p>
+            @if($showAddress && !empty($store['address']))<p>{{ $store['address'] }}</p>@endif
+            @if($showPhone && !empty($store['phone']))<p>{{ $store['phone'] }}</p>@endif
+            <div class="receipt-rule"></div>
+            <div class="receipt-meta">
+                <span>No. Nota</span><strong>{{ $order->number }}</strong>
+                <span>Tanggal</span><span>{{ $order->created_at ? $order->created_at->format('d M Y, H:i') : '-' }}</span>
+                <span>Pelanggan</span><span>{{ $order->customer_name ?: 'Pelanggan' }}</span>
+                @if($showCashier && !empty($order->cashier?->name))
+                    <span>Kasir</span><span>{{ $order->cashier->name }}</span>
+                @endif
+            </div>
+            <div class="receipt-rule"></div>
+            @foreach($order->items as $item)
+                @php
+                    $qtyFmt = rtrim(rtrim(number_format((float)$item->quantity, 2, ',', '.'), '0'), ',');
+                @endphp
+                <div class="receipt-line">
+                    <div>
+                        <b>{{ $item->category }}</b>
+                        <small>{{ $item->service_name }} · {{ $qtyFmt }} {{ $item->unit }} × Rp {{ number_format($item->price, 0, ',', '.') }}</small>
+                    </div>
+                    <span>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
+                </div>
+            @endforeach
+            <div class="receipt-rule"></div>
+            <div class="receipt-total">
+                <b>Total</b>
+                <b>Rp {{ number_format($order->total, 0, ',', '.') }}</b>
+            </div>
+            @if(!$isUnpaid)
+                <div class="receipt-sum">
+                    <span>{{ $methodLabel }}</span>
+                    <span>Rp {{ number_format($order->paid, 0, ',', '.') }}</span>
+                </div>
+                @if($order->method === 'cash')
+                    <div class="receipt-sum">
+                        <span>Kembalian</span>
+                        <span>Rp {{ number_format($order->change_amount, 0, ',', '.') }}</span>
+                    </div>
+                @endif
+            @endif
+            <div class="paid-stamp">
+                @if($isUnpaid)
+                    &#10005; BELUM BAYAR
+                @else
+                    &#10003; LUNAS
+                @endif
+            </div>
+            @if(!empty($order->notes))
+                <p class="receipt-notes">Catatan: {{ $order->notes }}</p>
+            @endif
+            <div class="receipt-rule"></div>
+            <p>
+                @foreach($footerLines as $idx => $ln)
+                    @if($idx > 0)<br>@endif{{ $ln }}
+                @endforeach
+            </p>
+            <svg class="receipt-smile" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
         </div>
     </div>
 </body>
