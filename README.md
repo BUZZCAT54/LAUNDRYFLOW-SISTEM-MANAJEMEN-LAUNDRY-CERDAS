@@ -82,7 +82,7 @@ php artisan migrate --seed
 
 ### Workspace Owner (Back-Office)
 - **Dashboard Owner:** ringkasan metrik operasional, tren pendapatan, ranking layanan, distribusi status cucian, dan aktivitas terkini.
-- **Pelanggan:** manajemen data pelanggan terintegrasi beserta impor/ekspor CSV.
+- **Pelanggan:** manajemen data pelanggan terintegrasi, termasuk pencarian, pengelolaan profil, dan riwayat transaksi.
 - **Riwayat Nota:** filter periode/metode/status dengan warna lencana per status dan penghitung cetak ulang (`Cetak N×`), preview nota 80mm, cetak ulang, unduh PDF, dan log aktivitas nota.
 - **Layanan & Harga:** CRUD master layanan, aktif/nonaktif layanan, serta pencatatan riwayat perubahan tarif (`price_histories`).
 - **Karyawan:** kelola akun `Owner` & `Kasir`, aktif/nonaktif akun (dengan proteksi agar owner aktif tunggal tidak dapat dinonaktifkan), dan reset password karyawan.
