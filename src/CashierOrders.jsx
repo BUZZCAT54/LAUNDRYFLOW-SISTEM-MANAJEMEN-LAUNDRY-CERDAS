@@ -21,7 +21,9 @@ const SUMMARY_CARDS=[
 
 function OrdersSummary({orders}) {
  const [period,setPeriod]=useState('all');
- const scoped=orders.filter(order=>inPeriod(order,period));
+ const [activeCard,setActiveCard]=useState(null);
+ const scoped=orders.filter(order=>inPeriod(order,period)),totalScoped=scoped.length;
+ const radius=16,circ=2*Math.PI*radius;
  return <section className="orders-summary" aria-labelledby="orders-summary-title">
   <header className="orders-panel-heading">
    <h2 id="orders-summary-title"><span className="orders-heading-icon"><Package size={17}/></span>Ringkasan Pesanan</h2>
@@ -32,11 +34,20 @@ function OrdersSummary({orders}) {
   <div className="orders-summary-grid">
    {SUMMARY_CARDS.map(({label,status,icon:Icon,tone})=>{
     const matching=scoped.filter(order=>status==='Semua'||order.status===status);
-    const activity=weeklyActivity(matching),peak=Math.max(1,...activity.map(day=>day.count));
-    return <article key={status} className={`orders-summary-card orders-summary-card--${tone}`}>
+    const pct=totalScoped?Math.round(matching.length/totalScoped*100):0;
+    const dashOffset=circ*(1-pct/100);
+    const isActive=activeCard===status;
+    return <article key={status} tabIndex={0} role="button" className={`orders-summary-card orders-summary-card--${tone}${isActive?' is-active':''}`} onMouseEnter={()=>setActiveCard(status)} onMouseLeave={()=>setActiveCard(null)} onFocus={()=>setActiveCard(status)} onBlur={()=>setActiveCard(null)} onClick={()=>setActiveCard(isActive?null:status)} aria-label={`${label}: ${matching.length} dari ${totalScoped} pesanan (${pct}%)`}>
      <span className="orders-summary-icon"><Icon size={28} strokeWidth={2}/></span>
      <div><strong>{matching.length}</strong><span>{label}</span></div>
-     <div className="orders-mini-bars" aria-hidden="true">{activity.map(day=><i key={day.date} style={{height:`${3+day.count/peak*25}px`}}/>)}</div>
+     <div className="orders-mini-ring-wrap" aria-hidden="true">
+      <svg className="orders-mini-ring" viewBox="0 0 42 42">
+       <circle className="orders-ring-bg" cx="21" cy="21" r={radius}/>
+       <circle className="orders-ring-fill" cx="21" cy="21" r={radius} strokeDasharray={circ} strokeDashoffset={dashOffset}/>
+      </svg>
+      <span>{pct}%</span>
+     </div>
+     {isActive&&<span className="orders-card-tooltip" role="tooltip"><b>{matching.length} / {totalScoped} pesanan ({pct}%)</b><small>{label}</small></span>}
     </article>;
    })}
   </div>

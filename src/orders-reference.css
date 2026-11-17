@@ -131,3 +131,13 @@
  .orders-status-guide{min-height:148px}.orders-status-guide .orders-panel-heading{margin-bottom:17px}
  .orders-stage b{font-size:11px}.orders-stage>span{width:38px;height:38px}
 }
+
+.orders-summary-card{position:relative;cursor:pointer}
+.orders-mini-ring-wrap{position:absolute;bottom:10px;right:11px;width:42px;height:42px;display:grid;place-items:center}
+.orders-mini-ring{width:42px;height:42px;transform:rotate(-90deg)}
+.orders-ring-bg{fill:none;stroke:rgba(148,163,184,.22);stroke-width:4}
+.orders-ring-fill{fill:none;stroke:var(--stat-color);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .4s ease}
+.orders-mini-ring-wrap>span{position:absolute;font-size:9px;font-weight:700;color:var(--stat-color)}
+.orders-card-tooltip{position:absolute;right:8px;top:-6px;transform:translateY(-100%);background:#0f172a;color:#fff;padding:5px 9px;border-radius:6px;font-size:10px;white-space:nowrap;z-index:8;pointer-events:none;box-shadow:0 4px 12px rgba(15,23,42,.18)}
+.orders-card-tooltip b,.orders-card-tooltip small{display:block}
+.orders-card-tooltip small{font-size:9px;color:#cbd5e1}
