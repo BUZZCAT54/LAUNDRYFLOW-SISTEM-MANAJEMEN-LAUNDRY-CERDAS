@@ -15,3 +15,11 @@
 
 .rd-welcome{background-image:url('/assets/dashboard-banner-hd.png');background-size:100% 263%;background-position:center}.rd-welcome-copy{background:linear-gradient(90deg,#b9defb 0%,#b4dcfa 84%,#b4dcfa00 100%)}
 @media(max-width:760px){.rd-welcome{background-size:auto 263%;background-position:62% center}}
+
+.rd-legend-btn{width:100%;border:0;background:transparent;padding:4px 6px;border-radius:6px;display:flex;align-items:center;gap:8px;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.rd-legend-btn:hover,.rd-legend-btn.is-active{background:#f1f5ff}
+.rd-service-btn{width:100%;border:0;background:transparent;text-align:left;font:inherit;color:inherit;position:relative;cursor:pointer;border-radius:8px;padding:6px}
+.rd-service-btn:hover,.rd-service-btn.is-active{background:#f4f7ff}
+.rd-service-tooltip{position:absolute;right:8px;top:-8px;transform:translateY(-100%);background:#0f172a;color:#fff;padding:5px 9px;border-radius:6px;font-size:10px;white-space:nowrap;z-index:8;pointer-events:none;box-shadow:0 4px 12px rgba(15,23,42,.18)}
+.rd-service-tooltip b,.rd-service-tooltip small{display:block}
+.rd-service-tooltip small{font-size:9px;color:#cbd5e1}

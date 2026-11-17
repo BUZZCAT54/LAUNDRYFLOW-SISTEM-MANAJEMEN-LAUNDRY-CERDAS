@@ -17,9 +17,11 @@ const periodRanges=period=>{
 };
 
 function OrderStatus({values,total}){
+ const [active,setActive]=useState(null);
  const labels=['Selesai','Diproses','Diterima','Diambil'],colors=['#4dcc69','#ffd84c','#2775ff','#a344fa'];
  let angle=0;const segments=values.map((n,i)=>{const start=angle;angle+=total?n/total*100:0;return `${colors[i]} ${start}% ${angle}%`;});
- return <Panel title="Status Pesanan" icon={BadgeCheck} className="ow-status-panel"><div className="ow-status-body"><div className="ow-donut" role="img" aria-label={labels.map((label,i)=>`${label} ${values[i]}`).join(', ')}><i className="chart-ring" aria-hidden="true" key={values.join('-')} style={{background:total?`conic-gradient(${segments.join(',')})`:'#edf2fb'}}/><div><strong>{total}</strong><small>Total</small></div></div><ul>{labels.map((label,i)=><li key={label}><i style={{background:colors[i]}}/><span>{label}</span><b>{values[i]}</b><small>{total?Math.round(values[i]/total*100):0}%</small></li>)}</ul></div></Panel>;
+ const activePct=active!=null&&total?Math.round(values[active]/total*100):0;
+ return <Panel title="Status Pesanan" icon={BadgeCheck} className="ow-status-panel"><div className="ow-status-body"><div className="ow-donut" role="img" aria-label={labels.map((label,i)=>`${label} ${values[i]}`).join(', ')}><i className="chart-ring" aria-hidden="true" key={values.join('-')} style={{background:total?`conic-gradient(${segments.join(',')})`:'#edf2fb'}}/><div><strong>{active==null?total:`${values[active]} (${activePct}%)`}</strong><small>{active==null?'Total':labels[active]}</small></div></div><ul>{labels.map((label,i)=>{const pct=total?Math.round(values[i]/total*100):0;return <li key={label}><button type="button" className={'ow-status-btn'+(active===i?' is-active':'')} onMouseEnter={()=>setActive(i)} onMouseLeave={()=>setActive(null)} onFocus={()=>setActive(i)} onBlur={()=>setActive(null)} onClick={()=>setActive(active===i?null:i)}><i style={{background:colors[i]}}/><span>{label}</span><b>{values[i]}</b><small>{pct}%</small></button></li>;})}</ul></div></Panel>;
 }
 
 function OperationalFocus({corrections,expenses,receipts,navigate}){

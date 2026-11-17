@@ -7,13 +7,14 @@ import './pages.css';
 export const initials=name=>name.trim().split(/\s+/).map(n=>n[0]).slice(0,2).join('');
 
 export function DashboardPanels({orders,onSelect}) {
+ const [activeDay,setActiveDay]=React.useState(null);
  const days=weeklyActivity(orders),total=days.reduce((n,d)=>n+d.count,0),max=Math.max(1,...days.map(d=>d.count));
  const ready=orders.filter(o=>o.status==='Selesai').sort((a,b)=>a.created_at.localeCompare(b.created_at));
  return <div className="dashboard-panels">
   <section className="activity-panel" aria-labelledby="activity-title">
    <div className="panel-heading"><div><span className="panel-kicker">RITME CUCIAN</span><h2 id="activity-title">Seminggu di laundry</h2></div><span className="date-chip">7 hari terakhir</span></div>
    <div className="activity-total"><strong>{total}</strong><span>pesanan masuk<small>{dateText(days[0].date)} sampai {dateText(days[6].date)}</small></span></div>
-   <ol className="activity-chart" aria-label="Jumlah pesanan per hari">{days.map(day=><li key={day.date} className={day.today?'is-today':''} aria-label={`${dateText(day.date)}: ${day.count} pesanan${day.today?', hari ini':''}`}><div className="activity-bar-space"><span className="bar-value">{day.count}</span><div className="activity-bar" style={{height:`${day.count/max*92}px`}}/></div><b>{day.label}</b><small>{day.today?'Hari ini':day.date.slice(8)}</small></li>)}</ol>
+   <ol className="activity-chart" aria-label="Jumlah pesanan per hari">{days.map((day,idx)=>{const pct=total?Math.round(day.count/total*100):0,isActive=activeDay===idx;return <li key={day.date} className={(day.today?'is-today ':'')+(isActive?'is-active':'')} aria-label={`${dateText(day.date)}: ${day.count} pesanan (${pct}%)${day.today?', hari ini':''}`}><button type="button" className="activity-bar-space" onMouseEnter={()=>setActiveDay(idx)} onMouseLeave={()=>setActiveDay(null)} onFocus={()=>setActiveDay(idx)} onBlur={()=>setActiveDay(null)} onClick={()=>setActiveDay(isActive?null:idx)}><span className="bar-value">{day.count}</span><div className="activity-bar" style={{height:`${day.count/max*92}px`}}/>{isActive&&<span className="activity-bar-tooltip" role="tooltip"><b>{day.count} pesanan ({pct}%)</b><small>{dateText(day.date)}</small></span>}</button><b>{day.label}</b><small>{day.today?'Hari ini':day.date.slice(8)}</small></li>;})}</ol>
   </section>
   <section className="pickup-panel" aria-labelledby="pickup-title"><div className="pickup-heading"><div><span className="panel-kicker">SIAP KEMBALI KE PELANGGAN</span><h2 id="pickup-title">Bersih, rapi.<br/>Tinggal dijemput.</h2></div><span className="pickup-count">{ready.length}<small>pesanan</small></span></div>
    <div className="pickup-list">{ready.length?ready.slice(0,3).map(order=><button key={order.id} onClick={()=>onSelect(order)}><span className="pickup-icon"><PackageCheck size={21}/></span><span><b>{order.customer_name}</b><small>{order.number}</small></span><ChevronRight size={17}/></button>):<div className="pickup-empty"><PackageCheck size={25}/><b>Belum ada yang menunggu jemput.</b><span>Pesanan berstatus selesai akan muncul di sini.</span></div>}</div>
