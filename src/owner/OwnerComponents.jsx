@@ -18,8 +18,21 @@ export function PageBanner({kind,title,description}){
  return <section className={`ow-banner ow-banner--${kind}`} aria-label={title}><ReferenceArt kind={kind}/><div className="ow-banner-copy"><h1>{title}</h1><p>{description}</p></div></section>;
 }
 export function MiniBars({values=[2,5,4,7,6,10],tone='blue'}){
- const peak=Math.max(1,...values);
- return <div className={`ow-minibars ow-tone-${tone}`} aria-hidden="true">{values.map((value,i)=><i key={i} style={{height:`${6+value/peak*30}px`,'--chart-delay':`${i*40}ms`}}/>)}</div>;
+ const [hover,setHover]=React.useState(null),gid=React.useId();
+ const list=values.length?values:[0],peak=Math.max(1,...list),total=list.reduce((s,v)=>s+v,0);
+ const w=76,h=34,pad=4;
+ const pts=list.map((v,i)=>[pad+(list.length>1?i/(list.length-1)*(w-pad*2):(w-pad*2)/2),h-pad-(v/peak)*(h-pad*2)]);
+ const linePts=pts.map(p=>p.join(',')).join(' '),areaPts=`${pts[0][0]},${h-2} ${linePts} ${pts.at(-1)[0]},${h-2}`;
+ const pct=hover!=null&&total?Math.round(list[hover]/total*100):0;
+ return <div className={`ow-minibars ow-spark ow-tone-${tone}`}>
+  <svg viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+   <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--tone)" stopOpacity=".28"/><stop offset="100%" stopColor="var(--tone)" stopOpacity=".02"/></linearGradient></defs>
+   <polygon points={areaPts} fill={`url(#${gid})`}/>
+   <polyline points={linePts} fill="none" stroke="var(--tone)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+   {pts.map(([x,y],i)=><circle key={i} cx={x} cy={y} r={hover===i?3.5:i===pts.length-1?2.5:1.8} fill="var(--tone)" style={{cursor:'pointer'}} onMouseEnter={()=>setHover(i)} onMouseLeave={()=>setHover(null)} onClick={()=>setHover(hover===i?null:i)}/>)}
+  </svg>
+  {hover!=null&&<span className="ow-spark-tooltip" role="tooltip">{list[hover]} ({pct}%)</span>}
+ </div>;
 }
 export function Metric({label,value,icon:Icon,tone='blue',trend,caption='dari bulan sebelumnya',soft=false,values,detail}){
  const Down=trend<0?ArrowDown:ArrowUp;

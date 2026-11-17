@@ -179,3 +179,7 @@ body{background:#6548ff}
 
 .ow-status-btn{width:100%;border:0;background:transparent;padding:4px 6px;border-radius:6px;display:flex;align-items:center;gap:8px;text-align:left;cursor:pointer;font:inherit;color:inherit}
 .ow-status-btn:hover,.ow-status-btn.is-active{background:#f1f5ff}
+
+.ow-spark{width:76px;height:34px;opacity:.95}
+.ow-spark svg{width:100%;height:100%;overflow:visible}
+.ow-spark-tooltip{position:absolute;bottom:calc(100% + 4px);right:0;background:#0f172a;color:#fff;padding:4px 7px;border-radius:5px;font-size:10px;font-weight:700;white-space:nowrap;z-index:8;pointer-events:none;box-shadow:0 4px 10px rgba(15,23,42,.18)}
