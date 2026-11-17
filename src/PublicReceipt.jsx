@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Check, 
   Clock, 
@@ -12,6 +13,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { rupiah, quantity, dateText } from './lib';
+import { Receipt } from './components';
 
 export default function PublicReceipt({ token }) {
   const [data, setData] = useState(null);
@@ -115,7 +117,8 @@ export default function PublicReceipt({ token }) {
     : null;
 
   return (
-    <div style={styles.page}>
+    <>
+    <div style={styles.page} className="public-receipt-page">
       <div style={styles.card} className="public-receipt-card">
         {/* Header Toko */}
         <header style={styles.header}>
@@ -269,6 +272,13 @@ export default function PublicReceipt({ token }) {
         </div>
       </div>
     </div>
+    {createPortal(
+      <div id="print-area">
+        <Receipt order={order} settings={store} />
+      </div>,
+      document.body
+    )}
+    </>
   );
 }
 
