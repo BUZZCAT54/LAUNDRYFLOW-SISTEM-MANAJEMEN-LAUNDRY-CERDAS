@@ -27,6 +27,6 @@ Panduan visual: ENERGY 3 / RHYTHM 2 / MOTION 1. Warna dan ilustrasi mengikuti re
 
 Jalankan `node tests/connection.mjs`, `node tests/reconnection.mjs`, `npm test`, dan `npm run build`.
 
-Hasil browser: gangguan API HTTP 503 menampilkan layar pemulihan; tombol Coba Lagi dan Kembali ke Dashboard memeriksa ulang server. Saat server kembali normal, aplikasi memulihkan halaman otomatis. Berat 7,25 kg, catatan, dan diskon 12,5% tetap sama sebelum dan sesudah gangguan. Pengujian memakai server khusus port 8082 tanpa menulis transaksi. Lebar dokumen ponsel 389 px sama dengan viewport, tanpa overflow horizontal. Loading 20% terlihat saat pemeriksaan sesi sengaja diperlambat.
+Hasil browser: gangguan API HTTP 503 menampilkan layar pemulihan; tombol Coba Lagi dan Kembali ke Dashboard memeriksa ulang server. Saat server kembali normal, aplikasi memulihkan halaman otomatis. Berat 7,25 kg, catatan, metode pembayaran, dan total tetap sama sebelum dan sesudah gangguan. Pengujian memakai server khusus port 8082 tanpa menulis transaksi. Lebar dokumen ponsel 389 px sama dengan viewport, tanpa overflow horizontal. Loading 20% terlihat saat pemeriksaan sesi sengaja diperlambat.
 
 Pemeriksaan visual: PASS identitas sesuai referensi dan gambar asli; PASS teks status/tombol berupa HTML; PASS tombol, fallback loading, error, dan retry aktif; PASS fokus keyboard dan reduced motion tersedia; PASS draft bertahan dalam simulasi; PASS build dan tes pemulihan. Huruf tulisan tangan menggunakan Caveat lokal, bukan gambar teks.

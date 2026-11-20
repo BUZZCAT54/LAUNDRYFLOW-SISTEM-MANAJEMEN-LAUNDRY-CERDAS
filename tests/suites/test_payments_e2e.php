@@ -102,7 +102,6 @@ BusinessSetting::updateOrCreate(['key' => 'qris_image'], ['value' => '']);
 $qrisNoConfigRes = callApp('/api/orders', 'POST', [
     'customer_id' => $customerId,
     'items' => [['service_id' => $serviceId, 'quantity' => $qty, 'category' => 'Kiloan']],
-    'discount_percent' => 0,
     'method' => 'qris',
     'paid' => $expectedTotal,
     'confirmed' => true,
@@ -116,7 +115,6 @@ BusinessSetting::updateOrCreate(['key' => 'qris_image'], ['value' => 'https://ex
 $qrisUnconfRes = callApp('/api/orders', 'POST', [
     'customer_id' => $customerId,
     'items' => [['service_id' => $serviceId, 'quantity' => $qty, 'category' => 'Kiloan']],
-    'discount_percent' => 0,
     'method' => 'qris',
     'paid' => $expectedTotal,
     'confirmed' => false,
@@ -130,7 +128,6 @@ $qrisReqKey = 'test-req-qris-valid-' . bin2hex(random_bytes(6));
 $qrisValidRes = callApp('/api/orders', 'POST', [
     'customer_id' => $customerId,
     'items' => [['service_id' => $serviceId, 'quantity' => $qty, 'category' => 'Kiloan']],
-    'discount_percent' => 0,
     'method' => 'qris',
     'paid' => $expectedTotal,
     'confirmed' => true,
@@ -154,7 +151,6 @@ BusinessSetting::updateOrCreate(['key' => 'bank_holder'], ['value' => '']);
 $bankNoConfigRes = callApp('/api/orders', 'POST', [
     'customer_id' => $customerId,
     'items' => [['service_id' => $serviceId, 'quantity' => $qty, 'category' => 'Kiloan']],
-    'discount_percent' => 0,
     'method' => 'transfer',
     'paid' => $expectedTotal,
     'confirmed' => true,
@@ -171,7 +167,6 @@ BusinessSetting::updateOrCreate(['key' => 'bank_holder'], ['value' => 'Syaqil La
 $bankUnconfRes = callApp('/api/orders', 'POST', [
     'customer_id' => $customerId,
     'items' => [['service_id' => $serviceId, 'quantity' => $qty, 'category' => 'Kiloan']],
-    'discount_percent' => 0,
     'method' => 'transfer',
     'paid' => $expectedTotal,
     'confirmed' => false,
@@ -185,7 +180,6 @@ $bankReqKey = 'test-req-bank-valid-' . bin2hex(random_bytes(6));
 $bankValidRes = callApp('/api/orders', 'POST', [
     'customer_id' => $customerId,
     'items' => [['service_id' => $serviceId, 'quantity' => $qty, 'category' => 'Kiloan']],
-    'discount_percent' => 0,
     'method' => 'transfer',
     'paid' => $expectedTotal,
     'confirmed' => true,

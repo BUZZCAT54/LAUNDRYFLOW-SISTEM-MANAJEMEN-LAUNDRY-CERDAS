@@ -5,14 +5,16 @@ import {Modal,Receipt,ReceiptDecoration,ErrorBox} from './components';
 import {ReferenceBanner} from './ReferenceUI';
 import './cashier-reference.css';
 
-const blank=()=>({customer_id:'',items:[],discount_percent:0,paid:'',method:'cash',notes:'',request_key:crypto.randomUUID()});
+const blank=()=>({customer_id:'',items:[],paid:'',method:'cash',notes:'',request_key:crypto.randomUUID()});
 export default function Cashier({data,user,onOrder,onCustomer,print,toast}) {
  const storageKey='syaqil-draft-'+user.id;
  const [draft,setDraft]=useState(()=>{try{
   const saved=JSON.parse(localStorage.getItem(storageKey));
   if(!saved)return blank();
-  const {discount,...rest}=saved;
-  return {...rest,discount_percent:saved.discount_percent??discount??0};
+  const draft={...saved};
+  delete draft.discount;
+  delete draft.discount_percent;
+  return draft;
  }catch{return blank();}});
  const [selectedService,setSelectedService]=useState(Number((data.services[1]||data.services[0])?.id));
  const category='Kiloan';
@@ -40,7 +42,7 @@ export default function Cashier({data,user,onOrder,onCustomer,print,toast}) {
  const invalidQty=items.some(i=>!/^\d{1,4}(\.\d{1,2})?$/.test(String(i.quantity))||Number(i.quantity)<=0||Number(i.quantity)>1000);
  const configured=isLater||draft.method==='cash'||(draft.method==='qris'?!!data.settings.qris_image:!!(data.settings.bank_name&&data.settings.bank_account&&data.settings.bank_holder));
  const canPay=customer&&items.length>0&&!invalidQty&&(isLater||draft.method!=='cash'||paid>=total)&&configured;
- const draftReceipt={items,subtotal,discount:0,discount_percent:0,total,paid:isLater?0:paid,change_amount:isLater?0:changeAmount,method:draft.method,payment_status:isLater?'unpaid':'paid',customer_name:customer?.name,notes:draft.notes};
+ const draftReceipt={items,subtotal,total,paid:isLater?0:paid,change_amount:isLater?0:changeAmount,method:draft.method,payment_status:isLater?'unpaid':'paid',customer_name:customer?.name,notes:draft.notes};
  function addItem(){
   if(!selected)return;
   if(!/^\d{1,4}(\.\d{1,2})?$/.test(weight)||Number(weight)<=0||Number(weight)>1000){setError('Masukkan berat lebih dari 0, maksimal 1.000, dengan maksimal 2 desimal.');return;}
@@ -58,7 +60,6 @@ export default function Cashier({data,user,onOrder,onCustomer,print,toast}) {
   try{
     const response=await api('/orders',{
       ...draft,
-      discount_percent:0,
       paid:isLater?0:draft.paid,
       confirmed:isLater?true:confirmed,
       expected_total:total
@@ -87,7 +88,7 @@ export default function Cashier({data,user,onOrder,onCustomer,print,toast}) {
   const service=data.services[1]||data.services[0];
   if(!service)return;
   setSelectedService(Number(service.id));setWeight('4.5');
-  change({customer_id:data.customers[0]?.id||'',items:[{key:crypto.randomUUID(),category:'Kiloan',service_id:Number(service.id),service_name:service.name,unit:service.unit,price:Number(service.price),quantity:4.5}],discount_percent:0,paid:50000,request_key:crypto.randomUUID()});
+  change({customer_id:data.customers[0]?.id||'',items:[{key:crypto.randomUUID(),category:'Kiloan',service_id:Number(service.id),service_name:service.name,unit:service.unit,price:Number(service.price),quantity:4.5}],paid:50000,request_key:crypto.randomUUID()});
  }
  return <><div className="ref-cashier-page"><ReferenceBanner variant="cashier"/><div className="pos-layout"><section className="pos-main"><div className="form-card"><div className="customer-row"><div className="customer-picker"><label htmlFor="customer-search">Pelanggan <span>*</span></label><div className="input-icon"><UserRound size={17}/><input id="customer-search" placeholder="Cari nama pelanggan..." value={picker?search:(customer?.name||'')} onFocus={()=>{setPicker(true);setSearch('');}} onChange={e=>setSearch(e.target.value)} onKeyDown={e=>{if(e.key==='Escape')setPicker(false);}} autoComplete="off"/><button className="icon-button" title="Tambah pelanggan" aria-label="Tambah pelanggan" onClick={()=>{setPicker(false);setAddCustomer(true);}}><Plus size={18}/></button></div>{picker&&<><button className="picker-backdrop" aria-label="Tutup pencarian pelanggan" onClick={()=>setPicker(false)}/><div className="customer-options">{data.customers.filter(c=>(c.name+' '+c.phone+' '+localPhone(c.phone)).toLowerCase().includes(search.toLowerCase())).slice(0,6).map(c=><button key={c.id} onClick={()=>{change({customer_id:c.id});setPicker(false);}}><span className="customer-initial">{c.name[0]}</span><span><b>{c.name}</b><small>{localPhone(c.phone)}</small></span>{Number(c.id)===Number(draft.customer_id)&&<Check size={15}/>}</button>)}<button className="add-customer-option" onClick={()=>{setPicker(false);setAddCustomer(true);}}><UserPlus size={18}/> Tambah pelanggan baru</button></div></>}</div><div><label>No. HP / WhatsApp</label><div className="input-icon readonly"><Phone size={16}/><span>{customer?localPhone(customer.phone):'Pilih pelanggan'}</span></div></div><div><label>No. Pesanan</label><div className="input-icon readonly order-number"><Hash size={17}/><span>Draft transaksi</span></div></div></div>
  <div className="section-label"><h3>Pilih Layanan</h3>{data.settings.demo&&<button className="text-button ref-demo-fill" onClick={example}><RotateCcw size={12}/> Isi contoh transaksi</button>}</div><div className="service-grid">{data.services.map((s,index)=>{const Icon=[Shirt,Clock3,Zap][index%3];return <button key={s.id} className={'service-card '+(selectedService===Number(s.id)?'selected':'')} onClick={()=>setSelectedService(Number(s.id))} aria-pressed={selectedService===Number(s.id)}><Icon size={32}/><span><b>{s.name}</b><small>{rupiah(s.price)} / {s.unit}</small><em>{s.description||(index===0?'Laundry harian':index===1?'Selesai maksimal 1 hari':'Prioritas paling cepat')}</em></span></button>;})}</div>

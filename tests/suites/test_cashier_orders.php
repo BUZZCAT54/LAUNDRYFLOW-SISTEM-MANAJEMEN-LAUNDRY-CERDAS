@@ -148,7 +148,6 @@ $badQtyRes = callApp('/api/orders', 'POST', [
     'items' => [
         ['service_id' => $serviceId, 'quantity' => 0, 'category' => 'Kiloan']
     ],
-    'discount_percent' => 0,
     'method' => 'cash',
     'paid' => 10000,
     'expected_total' => 0,

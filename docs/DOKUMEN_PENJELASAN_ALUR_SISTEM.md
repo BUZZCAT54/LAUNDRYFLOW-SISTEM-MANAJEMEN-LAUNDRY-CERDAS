@@ -6,7 +6,7 @@
 ## 1. PENDAHULUAN & ARSITEKTUR SISTEM
 
 Sistem Informasi **Syaqil Laundry** merupakan aplikasi berbasis web terintegrasi yang melayani dua fungsi utama:
-1. **Sistem Operasional Kasir (Front-Office):** Menangani pencatatan antrean cucian, penimbangan, kalkulasi diskon & pembayaran, penerbitan struk nota kasir 80mm, pembaruan status pengerjaan, hingga pemicu notifikasi WhatsApp pelanggan.
+1. **Sistem Operasional Kasir (Front-Office):** Menangani pencatatan antrean cucian, penimbangan, kalkulasi biaya & pembayaran, penerbitan struk nota kasir 80mm, pembaruan status pengerjaan, hingga pemicu notifikasi WhatsApp pelanggan.
 2. **Sistem Manajemen Owner (Back-Office):** Menangani pemantauan omzet, pencatatan biaya pengeluaran operasional, pembukuan laba-rugi, master data layanan & riwayat harga, pengelolaan kasir, audit koreksi/pembatalan nota, dan ekspor laporan keuangan.
 
 ### Arsitektur Teknis Sistem
@@ -45,9 +45,8 @@ Diagram Use Case memetakan fungsionalitas sistem berdasarkan hak akses aktor.
    - Mencari pelanggan berdasarkan nomor telepon/nama, mendaftarkan pelanggan baru, atau memperbarui alamat & catatan khusus.
 4. **UC-04: Menginput Transaksi Laundry**
    - Memilih pelanggan, memilih jenis layanan (Reguler, Ekspres 1 Hari, Ekspres Jam), memasukkan berat timbangan (kg) desimal, dan input catatan pakaian.
-5. **UC-05: Menghitung Biaya & Diskon Otomatis**
+5. **UC-05: Menghitung Biaya Otomatis**
    - Sistem otomatis menghitung subtotal = berat × tarif layanan.
-   - Menerapkan diskon persentase (0–100%) dengan pembulatan rupiah yang presisi.
 6. **UC-06: Memproses Pembayaran (Checkout)**
    - Mendukung metode Tunai (dengan kalkulasi kembalian otomatis), QRIS, atau Transfer Bank.
    - Menggunakan mekanisme idempotency (`request_key`) agar transaksi tidak terduplikasi saat koneksi lambat.
@@ -102,8 +101,6 @@ Alur transaksi kasir digambarkan dalam 3 swimlane utama: **Petugas Kasir**, **Si
   │
   ├─► Timbang Cucian (Kg) & Pilih Layanan (Reguler / Ekspres 1 Hari / Ekspres Jam)
   │
-  ├─► Masukkan Diskon (Jika Ada: 0 - 100%)
-  │
   ├─► [SISTEM] Kalkulasi Total Biaya & Tanggal Selesai (Due Date)
   │
   ├─► Pilih Metode Pembayaran (Tunai / QRIS / Transfer)
@@ -135,7 +132,7 @@ Activity Diagram mencakup seluruh siklus hidup pesanan (Create, Read, Update Sta
 ### Tahap 2: Input & Validasi Pesanan
 1. Kasir memasukkan item cucian dengan bobot desimal.
 2. Frontend memvalidasi kuantitas > 0 dan tarif sesuai master data.
-3. Kasir menentukan diskon dan metode pembayaran.
+3. Kasir menentukan metode pembayaran.
 
 ### Tahap 3: Simpan Transaksi (Atomic Save)
 1. Frontend mengirim payload JSON ke `POST /api/orders` dengan menyertakan `request_key` (UUID unik).
@@ -166,7 +163,7 @@ Sequence Diagram menggambarkan pesan berurutan antar-objek perangkat lunak:
 - **Database:** `MySQL (syaqil_laundry)`
 
 ### Urutan Pesan (Step-by-Step Message Flow):
-1. **Kasir ➔ React UI:** Mengisi formulir transaksi (Pelanggan, Layanan, Berat, Diskon, Uang Diterima).
+1. **Kasir ➔ React UI:** Mengisi formulir transaksi (Pelanggan, Layanan, Berat, Uang Diterima).
 2. **React UI ➔ React UI:** Validasi lokal formulir dan hitung draft kembalian.
 3. **Kasir ➔ React UI:** Menekan tombol `Proses Pembayaran`.
 4. **React UI ➔ Sanctum Auth:** Mengirim HTTP POST `/api/orders` + Bearer/Cookie Session + Payload JSON.
@@ -225,8 +222,6 @@ Menyimpan transaksi nota pesanan laundry.
 - `customer_id` (FK -> `customers.id`)
 - `cashier_id` (FK -> `users.id`)
 - `subtotal` (Unsigned Integer)
-- `discount_percent` (Decimal 5,2)
-- `discount` (Unsigned Integer)
 - `total` (Unsigned Integer)
 - `method` (Enum: 'cash', 'qris', 'transfer')
 - `paid` (Unsigned Integer)

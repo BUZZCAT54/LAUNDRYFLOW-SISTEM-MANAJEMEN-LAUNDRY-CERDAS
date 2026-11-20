@@ -112,7 +112,6 @@ $orderPayload = [
     'items' => [
         ['service_id' => $serviceId, 'quantity' => $qty, 'category' => 'Kiloan']
     ],
-    'discount_percent' => 0,
     'method' => 'cash',
     'paid' => $expectedTotal + 10000,
     'expected_total' => $expectedTotal,

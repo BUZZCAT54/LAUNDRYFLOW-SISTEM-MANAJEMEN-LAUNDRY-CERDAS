@@ -54,7 +54,7 @@ export const unitLabel=unit=>({kg:'Kilogram (kg)',pcs:'Satuan (pcs)',pasang:'Pas
 const correctionSeed=[
  ['20261006-0008','Rian Pratama','2026-10-06T18:11','Pembatalan','Pelanggan minta batal','Selesai',5,5,6000,6000,'Reguler','Reguler'],
  ['20261006-0007','Nabila Putri','2026-10-06T15:20','Koreksi Berat','Berat diubah dari 5 kg menjadi 3,5 kg','Selesai',5,3.5,6000,6000,'Reguler','Reguler'],
- ['20261005-0006','Andi Pratama','2026-10-05T14:33','Penyesuaian Harga','Diskon member tidak terinput','Selesai',3,3,10000,9000,'Ekspres 1 Hari','Ekspres 1 Hari'],
+ ['20261005-0006','Andi Pratama','2026-10-05T14:33','Penyesuaian Harga','Harga layanan tidak sesuai','Selesai',3,3,10000,9000,'Ekspres 1 Hari','Ekspres 1 Hari'],
  ['20261004-0005','Fajar Ramadhan','2026-10-04T23:07','Pembatalan','Salah input layanan','Selesai',4,4,6000,6000,'Reguler','Reguler'],
  ['20261004-0004','Siti Aisyah','2026-10-04T10:15','Koreksi Layanan','Reguler → Ekspres 1 Hari','Diproses',5,5,6000,10000,'Reguler','Ekspres 1 Hari'],
  ['20261003-0003','Dewi Lestari','2026-10-03T16:42','Penyesuaian Harga','Harga layanan disesuaikan','Selesai',4,4,6000,5500,'Reguler','Reguler'],

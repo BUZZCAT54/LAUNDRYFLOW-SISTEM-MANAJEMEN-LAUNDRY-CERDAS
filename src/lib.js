@@ -1,12 +1,6 @@
 let csrf='';
 export const rupiah = n => 'Rp ' + Math.round(Number(n)||0).toLocaleString('id-ID');
 export const quantity = n => Number(n).toLocaleString('id-ID',{maximumFractionDigits:2});
-export function calculateDiscount(subtotal,value) {
- const input=String(value??'').trim().replace(',','.')||'0';
- if(!/^\d+(\.\d{1,2})?$/.test(input)||Number(input)>100) return {percent:0,amount:0,error:'Masukkan diskon 0–100%, maksimal 2 angka desimal.'};
- const percent=Number(input),basisPoints=Math.round(percent*100);
- return {percent,amount:Math.round(subtotal*basisPoints/10000),error:''};
-}
 export const localPhone = p => String(p||'').replace(/^62/,'0');
 export const dateText = (d,withTime=false) => d ? new Date(d.replace(' ','T')).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',...(withTime?{hour:'2-digit',minute:'2-digit'}:{})}) : 'Belum ditentukan';
 const API_BASE = (import.meta.env?.VITE_API_BASE_URL || '/api').replace(/\/$/, '');

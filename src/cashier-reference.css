@@ -55,13 +55,9 @@
 .ref-cashier-page .summary-line{padding:10px 1px;font-size:12px;gap:8px}
 .ref-cashier-page .summary-line>b{font-size:13px}
 .ref-cashier-page .summary-line label{font-size:11px;font-weight:400;margin:0}
-.ref-cashier-page .discount-line{padding-top:2px;padding-bottom:9px}
 .ref-cashier-page .money-input{border-radius:6px;padding:0 9px;background:#f5f7fc;max-width:64%;width:190px}
 .ref-cashier-page .money-input input{font-size:13px;padding:8px 0}
 .ref-cashier-page .money-input>span{font-size:10px}
-.ref-cashier-page .discount-help{font-size:10px;line-height:1.4;margin:-3px 1px 8px;color:#647087}
-.ref-cashier-page .discount-help:empty{display:none}
-.ref-cashier-page .discount-help.invalid{color:#bc3024}
 .ref-cashier-page .total-highlight{border-radius:7px;margin:0 0 12px;padding:15px 11px;gap:8px;background:#d4ff28}
 .ref-cashier-page .total-highlight>b{font-size:19px}
 .ref-cashier-page .total-highlight>strong{font-size:30px;font-weight:850;letter-spacing:-1px;white-space:nowrap}

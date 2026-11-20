@@ -720,7 +720,7 @@ class OwnerController extends Controller
                         $finalTotal = max(0, (int)($new['total'] ?? $order->total));
                         $tag = "[KOREKSI {$correction->type}: {$correction->reason}]";
                         $order->update([
-                            'subtotal' => $finalTotal + (int)$order->discount_amount,
+                            'subtotal' => $finalTotal,
                             'total' => $finalTotal,
                             'change_amount' => max(0, (int)$order->paid - $finalTotal),
                             'notes' => str_contains((string)$order->notes, $tag)

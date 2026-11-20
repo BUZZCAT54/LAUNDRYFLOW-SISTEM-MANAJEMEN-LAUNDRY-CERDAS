@@ -326,11 +326,6 @@
             margin-bottom: 8px;
         }
 
-        .summary-row.discount {
-            color: #dc2626;
-            font-weight: 600;
-        }
-
         .summary-divider {
             height: 1px;
             background: #e2e8f0;

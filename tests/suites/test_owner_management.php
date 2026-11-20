@@ -263,7 +263,7 @@ if ($anyOrder) {
     $corrRes = callApp('/api/owner/corrections', 'POST', [
         'order_id' => $anyOrder->id,
         'type' => 'Penyesuaian Harga',
-        'reason' => 'Diskon tambahan voucher loyalitas pelanggan',
+        'reason' => 'Penyesuaian harga layanan',
     ], $ownerCookies);
     assertTest(
         '18. Pencatatan audit koreksi transaksi berhasil disimpan (HTTP 201)',

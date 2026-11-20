@@ -118,7 +118,7 @@ npm run test:all
 - Tambahan di `tests/suites/`: `test_whatsapp_receipts.php`
 
 ### Pengujian Frontend (JavaScript — `npm run test:js`)
-- **Utilitas Kasir (`tests/js/*.mjs`, 10 pemeriksaan):** `connection.mjs`, `discount.mjs`, `insights.mjs`, `payment.mjs`, `reconnection.mjs`, `reference-utils.mjs`, `reports.mjs`
+- **Utilitas Kasir (`tests/js/*.mjs`):** `connection.mjs`, `insights.mjs`, `payment.mjs`, `reconnection.mjs`, `reference-utils.mjs`, `reports.mjs`
 - **Modul Owner (`tests/owner/*.test.mjs`, 20 unit test):** `data.test.mjs`, `finance.test.mjs`, `management.test.mjs`, `settings.test.mjs`
 
 ---

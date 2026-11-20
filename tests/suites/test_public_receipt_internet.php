@@ -125,7 +125,6 @@ $orderPayload = [
     'items' => [
         ['service_id' => $service->id, 'quantity' => 2, 'category' => 'Kiloan']
     ],
-    'discount_percent' => 0,
     'method' => 'cash',
     'paid' => (int)round(2 * $service->price),
     'expected_total' => (int)round(2 * $service->price),

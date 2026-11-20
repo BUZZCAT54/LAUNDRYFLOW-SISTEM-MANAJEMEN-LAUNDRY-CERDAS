@@ -36,11 +36,11 @@ Instruksi bersama: precise-object-edit; faithful HD restoration, not redesign; p
 
 Susunan mengikuti referensi terbaru: banner, filter, empat KPI, grafik pendapatan, layanan terlaris, metode pembayaran, ringkasan harian, status pesanan, ilustrasi pertumbuhan. Filter disunting sebagai draft dan baru diterapkan setelah tombol Terapkan Filter. Perbandingan tersedia untuk periode sebelumnya/tahun sebelumnya; pembanding nol ditampilkan sebagai Baru. Angka bukan salinan angka contoh gambar.
 
-Pendapatan memakai total nota setelah diskon. Berat hanya item kg. Peringkat layanan menghitung satu nota satu kali per layanan. Ringkasan harian mencakup tanggal kosong dengan nilai nol, tujuh tanggal per halaman. Excel memakai transaksi hasil filter.
+Pendapatan memakai total nota. Berat hanya item kg. Peringkat layanan menghitung satu nota satu kali per layanan. Ringkasan harian mencakup tanggal kosong dengan nilai nol, tujuh tanggal per halaman. Excel memakai transaksi hasil filter.
 
 ## Verifikasi
 
-Build Vite lulus. Tes laporan mencakup tanggal inklusif, total setelah diskon, berat kg, deduplikasi layanan per nota, total harian, pembayaran tak dikenal, periode sebelumnya, tahun kabisat, baseline nol dan data kosong. Tes domain 20 kasus serta integritas XLSX/PDF juga lulus.
+Build Vite lulus. Tes laporan mencakup tanggal inklusif, total nota, berat kg, deduplikasi layanan per nota, total harian, pembayaran tak dikenal, periode sebelumnya, tahun kabisat, baseline nol dan data kosong. Tes domain 20 kasus serta integritas XLSX/PDF juga lulus.
 
 Browser memverifikasi draft filter belum mengubah angka sebelum Apply, filter hari kosong, perbandingan periode, jenis pembayaran, pagination harian bulanan, serta layar mobile CSS 389px tanpa overflow dokumen. Ekspor laporan hasil browser berisi 5 transaksi, Rp196.000, dan 25kg sesuai UI. Konsol sesi akhir tidak memuat error/warning.
 
